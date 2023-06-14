@@ -1,0 +1,1 @@
+## There are six encoder blocks in the Transformer module. 
