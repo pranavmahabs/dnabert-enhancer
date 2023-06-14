@@ -1,6 +1,6 @@
-window_size = 250
+wndow_size = 250
 nucleotides = ['A', 'T', 'C', 'G']
-token_len = 4
+token_len = 1
 
 def generate_kmers(file, letters, prefix, k):
     if k == 0:
@@ -35,7 +35,9 @@ class tokenizer(object):
                 word = line.strip()
                 if word not in kmer2idx:
                     kmer2idx[self.vocab_size] = vocab_size
-                    vocab_size += 1
+                    vocab_size += 1:q
+                    :q
+
         
         self.idx2kmer = {v:k for k,v in self.kmer2idx.items()}
 

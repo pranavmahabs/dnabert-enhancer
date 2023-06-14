@@ -8,6 +8,7 @@ from Bio import SeqIO
 from pybedtools import BedTool
 
 INPUT_LENGTH = 1000
+K=4
 tkr = tokenizer(k=4, "vocab")
 
 train_chromosomes = ["chr1", "chr2", "chr3", "chr4", "chr5", "chr6", "chr10", 
@@ -51,21 +52,27 @@ def create_dataset(pos_bed_file, neg_bed_file, results_dir, pad=True):
                                                [pos_train_label, pos_val_label, pos_test_label]):
 
         for r in bed_list:
-            _seq = chrom2seq[r.chrom][r.start:r.stop]
-            if not len(seq) == INPUT_LENGTH:
+            seqs = []
+            for offset in range(K):
+                seqs.append(chrom2seq[r.chrom][r.start+offset:r.stop+offset])
+            
+            assert(len(_seq1) == len(_seq2) == len(_seq3) == len(_seq4))
+            if not len(_seq1) == INPUT_LENGTH:
                 continue; 
-            tokenized = tkr.ktokenize(_seq, 4)
+            tokenized = [tkr.ktokenize(_seq, 4) for _seq in seqs]
             if pad:
-                tokenized = tkr.pad(tokenized, window_size=250)
-            vector = tkr.toindex(tokenized)
-            data_list.append(vector)
+                tokenized = [tkr.pad(tokenized_seq, window_size=250) for tokenized_seq in tokenized]
+            vectors = [tkr.toindex(tokenized_seq) for tokenized_seq in tokenized]
+            for vectorized in vectors:
+                data_list.append(vectorized)
 
             ## Insert the Label into the Approriate List
             ## 1:AE - Enhancers with H3K27AC; -1:PE, Enhancers only with H3K4me1
             _k = int(r[3]) - int(r[4])
             if _k == 0:
 		        _k = 1
-            label_list.append(_k)
+            for _ in range(K):
+                label_list.append(_k)
 
     print len(pos_train_data)
     print len(pos_val_data)
