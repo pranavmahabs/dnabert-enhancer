@@ -16,4 +16,5 @@ class GenoScanner(nn.Module):
         self.ff2 = self.Linear(d_model, 3)
     
     def forward(self, x):
+        pass
 
