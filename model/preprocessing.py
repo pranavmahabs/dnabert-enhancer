@@ -1,15 +1,13 @@
 from data_utils import build_vocab, tokenizer
-import os
+import sys
 import numpy as np
-import random 
-import time 
-import glob 
+import pickle
 from Bio import SeqIO
 from pybedtools import BedTool
 
 INPUT_LENGTH = 1000
 K=4
-tkr = tokenizer(k=4, "vocab")
+tkr = tokenizer(4, "vocab")
 
 train_chromosomes = ["chr1", "chr2", "chr3", "chr4", "chr5", "chr6", "chr10", 
                      "chr11", "chr12", "chr13", "chr14", "chr15", "chr16", 
@@ -17,7 +15,7 @@ train_chromosomes = ["chr1", "chr2", "chr3", "chr4", "chr5", "chr6", "chr10",
 valid_chromosomes = ["chr7"]
 test_chromosomes  = ["chr8", "chr9"]
 
-def get_chrom2seq(FASTA_FILE, capitalize=TRUE):
+def get_chrom2seq(FASTA_FILE, capitalize=True):
     """
     Load in the genome fasta file to extract sequences from the BED Files. 
     """
@@ -31,12 +29,13 @@ def create_dataset(pos_bed_file, neg_bed_file, results_dir, pad=True):
     # Load in the genome prior to building the dataset.
     chrom2seq = get_chrom2seq()
     
-    print "Generating the positive dataset..."
+    print("Generating the positive dataset...")
     pos_beds = list(BedTool(pos_bed_file))
+    neg_beds = list(BedTool(neg_bed_file))
 
     # Add all binding sites in BED files to train/test/val based on chromosome.
     pos_train_bed = [r for r in pos_beds if r.chrom in train_chromosomes]
-    pos_val_bed = [r for r in pos_beds if r.chrom in validation_chromosomes]
+    pos_val_bed = [r for r in pos_beds if r.chrom in valid_chromosomes]
     pos_test_bed = [r for r in pos_beds if r.chrom in test_chromosomes]
     
     pos_train_data = []
@@ -55,10 +54,11 @@ def create_dataset(pos_bed_file, neg_bed_file, results_dir, pad=True):
             seqs = []
             for offset in range(K):
                 seqs.append(chrom2seq[r.chrom][r.start+offset:r.stop+offset])
-            
-            assert(len(_seq1) == len(_seq2) == len(_seq3) == len(_seq4))
-            if not len(_seq1) == INPUT_LENGTH:
+            if not len(seq[0]) == INPUT_LENGTH:
                 continue; 
+            for seq in seqs:
+                if not len(seqs[0]) == len(seq):
+                    continue;
             tokenized = [tkr.ktokenize(_seq, 4) for _seq in seqs]
             if pad:
                 tokenized = [tkr.pad(tokenized_seq, window_size=250) for tokenized_seq in tokenized]
@@ -70,18 +70,18 @@ def create_dataset(pos_bed_file, neg_bed_file, results_dir, pad=True):
             ## 1:AE - Enhancers with H3K27AC; -1:PE, Enhancers only with H3K4me1
             _k = int(r[3]) - int(r[4])
             if _k == 0:
-		        _k = 1
+                _k = 1
             for _ in range(K):
                 label_list.append(_k)
 
-    print len(pos_train_data)
-    print len(pos_val_data)
-    print len(pos_test_data)
+    print(len(pos_train_data))
+    print(len(pos_val_data))
+    print(len(pos_test_data))
 
-    print "Generating the negative dataset..."
+    print("Generating the negative dataset...")
 
     neg_train_bed = [r for r in neg_beds if r.chrom in train_chromosomes]
-    neg_val_bed = [r for r in neg_beds if r.chrom in validation_chromosomes]
+    neg_val_bed = [r for r in neg_beds if r.chrom in valid_chromosomes]
     neg_test_bed = [r for r in neg_beds if r.chrom in test_chromosomes]
 
     neg_train_data = []
@@ -104,9 +104,9 @@ def create_dataset(pos_bed_file, neg_bed_file, results_dir, pad=True):
     neg_val_label = [0 for i in range(len(neg_val_data))]
     neg_test_label = [0 for i in range(len(neg_test_data))]
 
-    print len(neg_train_data)
-    print len(neg_val_data)
-    print len(neg_test_data)
+    print(len(neg_train_data))
+    print(len(neg_val_data))
+    print(len(neg_test_data))
 
     # Concatenate the positive and negative datasets in preparation for final return
     train_data = pos_train_data + neg_train_data
@@ -128,10 +128,10 @@ def create_dataset(pos_bed_file, neg_bed_file, results_dir, pad=True):
         idx2kmer = tkr.idx2kmer
     )
 
-def create_pickle(data_folder):
+def create_pickle(pos, neg, data_folder):
     with open(f'{data_folder}/data.p', 'wb') as pickle_file:
-        pickle.dump(create_dataset(data_folder), pickle_file)
+        pickle.dump(create_dataset(pos, neg, data_folder), pickle_file)
     print(f'Data has been dumped into {data_folder}/data.p!')
 
 if __name__ == '__main__':
-    create_pickle(data)
+    create_pickle(sys.argv[1], sys.argv[2], sys.argv[3])
