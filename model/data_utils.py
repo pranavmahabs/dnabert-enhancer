@@ -10,7 +10,7 @@ def generate_kmers(file, letters, prefix, k):
     for letter in letters:
         generate_kmers(file, letters, prefix + letter, k - 1)
 
-def build_vocab(letters=nucleotides, k):
+def build_vocab(k, letters=nucleotides):
     """
     There will be 4^4 possible 4-mers as the vocabulary with <pad> in
     case a shorter sequence is provided to the model. 
@@ -24,7 +24,7 @@ def build_vocab(letters=nucleotides, k):
 # build_vocab(nucleotides, token_len)
 
 class tokenizer(object):
-    def __init__(self, k, lang_file="vocab")
+    def __init__(self, k, lang_file="vocab"):
         self.k = k
         self.kmer2idx = {}
         self.vocab_size = 0
@@ -33,10 +33,9 @@ class tokenizer(object):
         with open(lang_file, "r") as file:
             for line in file:
                 word = line.strip()
-                if word not in kmer2idx:
-                    kmer2idx[self.vocab_size] = vocab_size
-                    vocab_size += 1:q
-                    :q
+                if word not in self.kmer2idx:
+                    self.kmer2idx[self.vocab_size] = vocab_size
+                    vocab_size += 1
 
         
         self.idx2kmer = {v:k for k,v in self.kmer2idx.items()}

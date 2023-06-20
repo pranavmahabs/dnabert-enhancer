@@ -1,2 +1,4 @@
-# GenoScanner
-A transformer architecture to classify gene regulatory elements, highlighting key portions of the input genome. 
+# genoscanner
+An interpretable Transformer-based architecture to classify gene regulatory elements based on sequence. 
+
+Work in Progress!!

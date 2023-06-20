@@ -1,3 +1,5 @@
+import torch
+import torch.nn
 from layers import EncoderLayer
 from embed import Embedder, PositionalEncoder
 
