@@ -4,7 +4,8 @@ from torch import nn, Tensor
 from torch.nn import TransformerEncoder, TransformerEncoderLayer
 from embed import PositionalEncoding
 
-class TransformerBlock(nn.Module):
+## TODO: change to GeLU activation function in the encoder layesr <3 
+class GeneTransformer(nn.Module):
     def __init__(self, ntoken, d_model, nhead, d_hid, nlayers, dropout):
         super().__init__()
         self.model_type = "TransformerBlock"
@@ -24,4 +25,3 @@ class TransformerBlock(nn.Module):
         x = self.pos_encoder(x)
         output = self.transformer_encoder(x, x_mask)
         return output
-
