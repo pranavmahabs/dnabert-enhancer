@@ -236,6 +236,13 @@ def create_pickle(pos, neg, data_folder, K, build_v):
         pickle.dump(create_dataset(pos, neg, data_folder, build_v=build_v, K=K), pickle_file)
     print(f"Data has been dumped into {data_folder}/data.p!")
 
+pos = "/data/Dcode/pranav/genoscanner/data/positive.bed"
+neg = "/data/Dcode/pranav/genoscanner/data/negative.bed"
+data_folder = "/data/Dcode/pranav/genoscanner/data"
+K=4
+build_v = True
+
+create_pickle(pos, neg, data_folder, K, build_v)
 
 if __name__ == "__main__":
     create_pickle(sys.argv[1], sys.argv[2], sys.argv[3])

@@ -23,6 +23,26 @@ tkr = dataset['tokenizer']
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 ## Create and Define Batches
+## TODO: Load the Data
+def shuffle_split(seqs, labs):
+    indices = np.random.permutation(len(seqs))
+    return seqs[indices], labs[indices]
+
+train_seq, train_lab = shuffle_split(dataset['train_seq'], dataset['train_lab'])
+train_mask = np.ones(train_seq.shape)
+
+val_seq, val_lab = shuffle_split(dataset['val_seq'], dataset['val_lab'])
+val_mask = np.ones(val_seq.shape)
+
+test_seq, test_lab = shuffle_split(dataset['test_seq'], dataset['test_lab'])
+test_mask = np.ones(test_seq.shape)
+
+## TODO: Prepare Dataset!
+BATCH_SIZE = 64
+WINDOW_SIZE = 250
+GPUS = 4
+EPOCH = 50
+num_samples = len(train)
 
 
 ## Instantiate the Model
@@ -35,10 +55,11 @@ model = GenoClassifier(ntokens, d_hid, nlayers, nhead, dropout)
 
 ## TODO: Train Function
 import time
-criterion = nn.CrossEntropyLoss()
+criterion = nn.CrossEntropyLoss() #TODO: switch to categorical cross entropy
 lr = 5.0
-optimizer = torch.optim.SGD(model.parameters(), lr=lr)
+optimizer = torch.optim.Adam(model.parameters(), lr=lr)
 scheduler = torch.optim.lr_scheduler.StepLR(optimizer, 1.0, gamma=0.95)
+metrics = ?? CategoricalAccuracy('accuracy')
 
 def train(model: nn.Module):
     model.train()
