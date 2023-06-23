@@ -1,4 +1,8 @@
-wndow_size = 250
+import torch
+import random
+from torch.utils.data import Dataset, DataLoader
+
+window_size = 250
 nucleotides = ["A", "T", "C", "G"]
 token_len = 1
 
@@ -35,13 +39,14 @@ class tokenizer(object):
         self.lang_file = lang_file
         self.vocab_size = 0
 
-        ## Needs to load the language.
+        # Needs to load the language.
         print("Loading and tokenizing vocabulary.")
         with open(lang_file, "r") as file:
             for line in file:
                 word = line.strip()
                 if len(word) != k and word != "<pad>":
-                    print(f"Uncompatible word {word} must be of length in {k}.")
+                    print(
+                        f"Uncompatible word {word} must be of length in {k}.")
                     exit
                 if word not in self.kmer2idx:
                     self.kmer2idx[self.vocab_size] = vocab_size
@@ -53,7 +58,8 @@ class tokenizer(object):
         chopped = len(sequence) % self.k
         sequence = sequence[: len(sequence) - chopped]
 
-        split_site = [sequence[i : i + self.k] for i in range(0, len(sequence), self.k)]
+        split_site = [sequence[i: i + self.k]
+                      for i in range(0, len(sequence), self.k)]
         print(f"{chopped} nucleotides were chopped from the sequence.")
         return split_site
 
@@ -78,3 +84,25 @@ class tokenizer(object):
         pass
 
 
+class SequenceDataset(Dataset):
+    """Dataset Class Extension for Loader"""
+
+    def __init__(self, sequences, masks, labels):
+        self.sequences = sequences
+        self.labels = labels
+        self.masks = masks
+
+        if -1 in self.labels:
+            self.labels += 1
+
+    def __len__(self):
+        return len(self.labels)
+
+    def __getitem__(self, idx):
+        label = self.labels[idx]
+        sequences = self.sequences[idx]
+        masks = self.masks[idx]
+        sample = {"Sequence": torch.from_numpy(sequences),
+                  "Mask": torch.from_numpy(masks),
+                  "Class": torch.from_numpy(label)}
+        return sample
