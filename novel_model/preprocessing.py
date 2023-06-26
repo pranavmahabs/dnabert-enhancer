@@ -51,7 +51,7 @@ def create_dataset(
     results_dir,
     fasta,
     build_v=False,
-    vocab_file="vocab",
+    vocab_file="novel_model/vocab",
     pad=True,
     K=4,
 ):
@@ -60,8 +60,8 @@ def create_dataset(
     Output: Pickle file of dictionary object containing all relevant info.
     """
     if build_v:
-        build_vocab(K, vocab_file="vocab")
-    tkr = tokenizer(K, "vocab")
+        build_vocab(K, vocab_file=vocab_file)
+    tkr = tokenizer(K, vocab_file)
 
     # Load in the genome prior to building the dataset.
     chrom2seq = get_chrom2seq(fasta)
@@ -91,24 +91,21 @@ def create_dataset(
         for r in bed_list:
             seqs = []
             for offset in range(K):
-                seqs.append(chrom2seq[r.chrom]
-                            [r.start + offset: r.stop + offset])
-            if not len(seq[0]) == INPUT_LENGTH:
-                continue
-            for seq in seqs:
-                if not len(seqs[0]) == len(seq):
-                    continue
+                this_seq = chrom2seq[r.chrom][r.start + offset : r.stop + offset]
+                seqs.append([str(this_seq)])
             tokenized = [tkr.ktokenize(_seq) for _seq in seqs]
             if pad:
                 tokenized = [
                     tkr.pad(tokenized_seq, window_size=250)
                     for tokenized_seq in tokenized
                 ]
-            vectors = [tkr.toindex(tokenized_seq)
-                       for tokenized_seq in tokenized]
+            window_size = int(INPUT_LENGTH / 4)
+            for seq in tokenized:
+                if len(seq) < window_size:
+                    seq = tkr.pad(seq, window_size=window_size)
+            vectors = [tkr.toindex(tokenized_seq) for tokenized_seq in tokenized]
             for vectorized in vectors:
                 data_list.append(vectorized)
-
             # Insert the Label into the Approriate List
             # 1:AE - Enhancers with H3K27AC; -1:PE, Enhancers only with H3K4me1
             _k = int(r[3]) - int(r[4])
@@ -136,10 +133,10 @@ def create_dataset(
         [neg_train_data, neg_val_data, neg_test_data],
     ):
         for r in bed_list:
-            _seq = chrom2seq[r.chrom][r.start: r.stop]
+            _seq = chrom2seq[r.chrom][r.start : r.stop]
             if not len(_seq) == INPUT_LENGTH:
                 continue
-            tokenized = tkr.ktokenize(_seq, 4)
+            tokenized = tkr.ktokenize(_seq)
             if pad:
                 tokenized = tkr.pad(tokenized, window_size=250)
             vector = tkr.toindex(tokenized)
@@ -171,7 +168,7 @@ def create_dataset(
         test_lab=np.array(test_label),
         kmer2idx=tkr.kmer2idx,
         idx2kmer=tkr.idx2kmer,
-        tokenizer=tkr
+        tokenizer=tkr,
     )
 
 
@@ -206,8 +203,7 @@ def create_train(total_bed, fasta, build_v=True, vocab_file="vocab"):
         for r in bed_list:
             seqs = []
             for offset in range(K):
-                seqs.append(chrom2seq[r.chrom]
-                            [r.start + offset: r.stop + offset])
+                seqs.append(chrom2seq[r.chrom][r.start + offset : r.stop + offset])
             if not len(seq[0]) == INPUT_LENGTH:
                 continue
             for seq in seqs:
@@ -219,8 +215,7 @@ def create_train(total_bed, fasta, build_v=True, vocab_file="vocab"):
                     tkr.pad(tokenized_seq, window_size=250)
                     for tokenized_seq in tokenized
                 ]
-            vectors = [tkr.toindex(tokenized_seq)
-                       for tokenized_seq in tokenized]
+            vectors = [tkr.toindex(tokenized_seq) for tokenized_seq in tokenized]
             for vectorized in vectors:
                 data_list.append(vectorized)
 
@@ -235,10 +230,12 @@ def create_train(total_bed, fasta, build_v=True, vocab_file="vocab"):
     return 0
 
 
-def create_pickle(pos, neg, data_folder, K, build_v):
+def create_pickle(pos, neg, data_folder, fasta, K, build_v):
     with open(f"{data_folder}/data.p", "wb") as pickle_file:
-        pickle.dump(create_dataset(pos, neg, data_folder,
-                    build_v=build_v, K=K), pickle_file)
+        pickle.dump(
+            create_dataset(pos, neg, data_folder, fasta, build_v=build_v, K=K),
+            pickle_file,
+        )
     print(f"Data has been dumped into {data_folder}/data.p!")
 
 
@@ -247,8 +244,6 @@ neg = "/data/Dcode/pranav/genoscanner/data/negative.bed"
 data_folder = "/data/Dcode/pranav/genoscanner/data"
 K = 4
 build_v = True
-
-create_pickle(pos, neg, data_folder, K, build_v)
 
 if __name__ == "__main__":
     create_pickle(sys.argv[1], sys.argv[2], sys.argv[3])

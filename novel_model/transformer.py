@@ -9,6 +9,7 @@ class GeneTransformer(nn.Module):
     def __init__(self, ntoken, d_model, nhead, d_hid, nlayers, dropout):
         super().__init__()
         self.model_type = "TransformerBlock"
+        self.embedding = nn.Embedding(ntoken, d_model)
         self.pos_encoder = PositionalEncoding(d_model, dropout)
         encoder_layers = TransformerEncoderLayer(d_model, nhead, d_hid, dropout)
         self.transformer_encoder = TransformerEncoder(encoder_layers, d_model)

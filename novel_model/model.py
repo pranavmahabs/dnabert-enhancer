@@ -1,6 +1,5 @@
 import torch
 import torch.nn as nn
-from embed import Embedder, PositionalEncoder
 from transformer import GeneTransformer
 
 
@@ -11,14 +10,14 @@ class GenoClassifier(nn.Module):
             vocab_size, d_model, heads, d_model, N, dropout
         )
         ## Classifier
-        self.ff = self.Linear(d_model, d_ff)
-        self.drop = nn.dropout(dropout)
-        self.ff2 = self.Linear(d_model, 3)
+        self.ff = nn.Linear(d_model, d_model)
+        self.drop = nn.Dropout(dropout)
+        self.ff2 = nn.Linear(d_model, 3)
 
     def forward(self, x, x_mask):
         src = self.transformer(x, x_mask)
         ff1 = self.drop(self.ff(src))
-        logits = nn.Softmax(self.ff2(ff1))
+        logits = self.ff2(ff1)
         return logits
 
 

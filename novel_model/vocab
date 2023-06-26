@@ -1,3 +1,8 @@
+<pad>
+<mask>
+<unk>
+<cls>
+<sep>
 AAAA
 AAAT
 AAAC
@@ -254,4 +259,3 @@ GGGA
 GGGT
 GGGC
 GGGG
-<pad>
