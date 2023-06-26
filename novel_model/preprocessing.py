@@ -91,7 +91,8 @@ def create_dataset(
         for r in bed_list:
             seqs = []
             for offset in range(K):
-                seqs.append(chrom2seq[r.chrom][r.start + offset : r.stop + offset])
+                seqs.append(chrom2seq[r.chrom]
+                            [r.start + offset: r.stop + offset])
             if not len(seq[0]) == INPUT_LENGTH:
                 continue
             for seq in seqs:
@@ -103,12 +104,13 @@ def create_dataset(
                     tkr.pad(tokenized_seq, window_size=250)
                     for tokenized_seq in tokenized
                 ]
-            vectors = [tkr.toindex(tokenized_seq) for tokenized_seq in tokenized]
+            vectors = [tkr.toindex(tokenized_seq)
+                       for tokenized_seq in tokenized]
             for vectorized in vectors:
                 data_list.append(vectorized)
 
-            ## Insert the Label into the Approriate List
-            ## 1:AE - Enhancers with H3K27AC; -1:PE, Enhancers only with H3K4me1
+            # Insert the Label into the Approriate List
+            # 1:AE - Enhancers with H3K27AC; -1:PE, Enhancers only with H3K4me1
             _k = int(r[3]) - int(r[4])
             if _k == 0:
                 _k = 1
@@ -134,7 +136,7 @@ def create_dataset(
         [neg_train_data, neg_val_data, neg_test_data],
     ):
         for r in bed_list:
-            _seq = chrom2seq[r.chrom][r.start : r.stop]
+            _seq = chrom2seq[r.chrom][r.start: r.stop]
             if not len(_seq) == INPUT_LENGTH:
                 continue
             tokenized = tkr.ktokenize(_seq, 4)
@@ -184,9 +186,9 @@ def create_train(total_bed, fasta, build_v=True, vocab_file="vocab"):
     # Bed File Load
     beds = list(BedTool(total_bed))
 
-    train_bed = [r for r in pos_beds if r.chrom in train_chromosomes]
-    val_bed = [r for r in pos_beds if r.chrom in valid_chromosomes]
-    test_bed = [r for r in pos_beds if r.chrom in test_chromosomes]
+    train_bed = [r for r in total_bed if r.chrom in train_chromosomes]
+    val_bed = [r for r in total_bed if r.chrom in valid_chromosomes]
+    test_bed = [r for r in total_bed if r.chrom in test_chromosomes]
 
     train_data = []
     val_data = []
@@ -199,12 +201,13 @@ def create_train(total_bed, fasta, build_v=True, vocab_file="vocab"):
     for bed_list, data_list, label_list in zip(
         [train_bed, val_bed, test_bed],
         [train_data, val_data, test_data],
-        [train_label, val_label, pos_test_label],
+        [train_label, val_label, val_label],
     ):
         for r in bed_list:
             seqs = []
             for offset in range(K):
-                seqs.append(chrom2seq[r.chrom][r.start + offset : r.stop + offset])
+                seqs.append(chrom2seq[r.chrom]
+                            [r.start + offset: r.stop + offset])
             if not len(seq[0]) == INPUT_LENGTH:
                 continue
             for seq in seqs:
@@ -216,12 +219,13 @@ def create_train(total_bed, fasta, build_v=True, vocab_file="vocab"):
                     tkr.pad(tokenized_seq, window_size=250)
                     for tokenized_seq in tokenized
                 ]
-            vectors = [tkr.toindex(tokenized_seq) for tokenized_seq in tokenized]
+            vectors = [tkr.toindex(tokenized_seq)
+                       for tokenized_seq in tokenized]
             for vectorized in vectors:
                 data_list.append(vectorized)
 
-            ## Insert the Label into the Approriate List
-            ## 1:AE - Enhancers with H3K27AC; -1:PE, Enhancers only with H3K4me1
+            # Insert the Label into the Approriate List
+            # 1:AE - Enhancers with H3K27AC; -1:PE, Enhancers only with H3K4me1
             _k = int(r[3]) - int(r[4])
             if _k == 0:
                 _k = 1
@@ -233,13 +237,15 @@ def create_train(total_bed, fasta, build_v=True, vocab_file="vocab"):
 
 def create_pickle(pos, neg, data_folder, K, build_v):
     with open(f"{data_folder}/data.p", "wb") as pickle_file:
-        pickle.dump(create_dataset(pos, neg, data_folder, build_v=build_v, K=K), pickle_file)
+        pickle.dump(create_dataset(pos, neg, data_folder,
+                    build_v=build_v, K=K), pickle_file)
     print(f"Data has been dumped into {data_folder}/data.p!")
+
 
 pos = "/data/Dcode/pranav/genoscanner/data/positive.bed"
 neg = "/data/Dcode/pranav/genoscanner/data/negative.bed"
 data_folder = "/data/Dcode/pranav/genoscanner/data"
-K=4
+K = 4
 build_v = True
 
 create_pickle(pos, neg, data_folder, K, build_v)

@@ -44,7 +44,7 @@ test_dataset = SequenceDataset(test_seq, test_mask, test_lab)
 
 # Prepare Dataset!
 BATCH_SIZE = 64
-GPUS = 4
+# GPUS = 4
 EPOCH = 10
 num_samples = len(train_seq)
 
@@ -101,16 +101,16 @@ def train_epoch(epoch):
             start_time = time.time()
 
 
-def evaluate(loader: DataLoader):
+def evaluate(loader: DataLoader):  # validation
     model.eval()
     total_loss = 0.
     with torch.no_grad():
-        for i, data in enumerate(val_loader):
+        for i, data in enumerate(loader):
             vseqs, vmasks, vlabels = data
             voutputs = model(vseqs, vmasks)
             vloss = criterion(voutputs, vlabels)
             total_loss += vloss
-    return total_loss / (len(val_loader))
+    return total_loss / (len(loader))
 
 
 # TRAINING: Epochs Loop
@@ -122,7 +122,7 @@ for epoch in range(1, EPOCH + 1):
     epoch_start_time = time.time()
     print('EPOCH {}:'.format(epoch + 1))
     train_epoch(epoch)
-    vloss = evaluate()
+    vloss = evaluate(val_loader)
     val_ppl = math.exp(vloss)
     elapsed = time.time() - epoch_start_time
 
