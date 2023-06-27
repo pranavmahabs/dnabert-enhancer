@@ -14,7 +14,9 @@ class GenoClassifier(nn.Module):
         self.drop = nn.Dropout(dropout)
         self.ff2 = nn.Linear(d_model, 3)
 
-    def forward(self, x, x_mask):
+    def forward(self, x, device):
+        x_mask = torch.ones(x.size(dim=0), x.size(dim=0))
+        x_mask = x_mask.to(device)
         src = self.transformer(x, x_mask)
         ff1 = self.drop(self.ff(src))
         logits = self.ff2(ff1)

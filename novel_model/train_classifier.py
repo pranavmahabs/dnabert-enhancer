@@ -12,9 +12,6 @@ from preprocessing import create_pickle
 from data_utils import tokenizer, SequenceDataset
 from model import GenoClassifier
 
-# Set up CUDA Configurations with the GPU
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-print(torch.cuda.device_count(), torch.cuda.get_device_name(0))
 
 pos_bed_file = sys.argv[1]
 neg_bed_file = sys.argv[2]
@@ -28,25 +25,51 @@ with open(results_dir + "data.p", "rb") as handle:
     dataset = pickle.load(handle)
 tkr = dataset["tokenizer"]
 
+#####################################################################
+#                      Configuring Model/GPUs                       #
+#####################################################################
+
+# Instantiate the Model
+ntokens = len(tkr.kmer2idx.keys())
+d_hid = 100
+nlayers = 2
+nhead = 2
+dropout = 0.2
+model = GenoClassifier(ntokens, d_hid, nlayers, nhead, dropout)
+
+# Set up CUDA Configurations with the GPU
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+print(torch.cuda.device_count(), torch.cuda.get_device_name(0))
+
+model = nn.DataParallel(model)
+model.to(device)
+
+pytorch_total_params = sum(p.numel() for p in model.parameters())
+trainable = sum(p.numel() for p in model.parameters() if p.requires_grad)
+print(pytorch_total_params, trainable)
+
+
+#####################################################################
+#                        Loading the Dataset                        #
+#####################################################################
 
 # Create and Define Batches
 # Load the Data
 train_seq, train_lab = dataset["train_seq"], dataset["train_lab"]
 train_mask = np.ones(train_seq.shape)
-train_dataset = SequenceDataset(train_seq, train_mask, train_lab)
+train_dataset = SequenceDataset(train_seq, train_mask, train_lab, device)
 print(train_seq.shape, train_lab.shape, train_mask.shape)
 
 val_seq, val_lab = dataset["val_seq"], dataset["val_lab"]
 val_mask = np.ones(val_seq.shape)
-val_dataset = SequenceDataset(val_seq, val_mask, val_lab)
+val_dataset = SequenceDataset(val_seq, val_mask, val_lab, device)
 
 test_seq, test_lab = dataset["test_seq"], dataset["test_lab"]
 test_mask = np.ones(test_seq.shape)
-test_dataset = SequenceDataset(test_seq, test_mask, test_lab)
-
+test_dataset = SequenceDataset(test_seq, test_mask, test_lab, device)
 
 # Prepare Dataset!
-BATCH_SIZE = 64
+BATCH_SIZE = 32
 # GPUS = 4
 EPOCH = 10
 num_samples = len(train_seq)
@@ -55,17 +78,11 @@ train_loader = DataLoader(train_dataset, batch_size=BATCH_SIZE, shuffle=True)
 val_loader = DataLoader(val_dataset, batch_size=BATCH_SIZE, shuffle=True)
 test_loader = DataLoader(test_dataset, batch_size=BATCH_SIZE, shuffle=True)
 
-# Instantiate the Model
-ntokens = len(tkr.kmer2idx.keys())
-d_hid = 64
-nlayers = 2
-nhead = 2
-dropout = 0.2
-model = GenoClassifier(ntokens, d_hid, nlayers, nhead, dropout)
 
-pytorch_total_params = sum(p.numel() for p in model.parameters())
-trainable = sum(p.numel() for p in model.parameters() if p.requires_grad)
-print(pytorch_total_params, trainable)
+#####################################################################
+#                      Model Training/Validation                    #
+#####################################################################
+
 
 # Train Function
 criterion = nn.CrossEntropyLoss()
@@ -83,20 +100,20 @@ def train_epoch(epoch):
     start_time = time.time()
 
     for i, data in enumerate(train_loader):
-        print(i)
         # get batch and split into seqs, masks, labels
         sequences = data["Sequence"]
         masks = torch.ones(sequences.size(dim=0), sequences.size(dim=0))
         labels = data["Class"]
         num_classes = 3
-        labels_one_hot = torch.zeros(labels.size(0), num_classes)
-        labels_one_hot.scatter_(1, labels.unsqueeze(1), 1)
+        # labels_one_hot = torch.zeros(labels.size(0), num_classes)
+        # labels_one_hot.scatter_(1, labels.unsqueeze(1), 1)
+        # labels_one_hot = labels_one_hot.to(device)
         # Zero Gradients for every batch
         optimizer.zero_grad()
         # Make predictions for this batch
-        output = model(sequences, masks)
+        output = model(sequences, device)  # removed masks
         # Update Learning Weights
-        loss = criterion(output, labels_one_hot.long())
+        loss = criterion(output, labels)
         loss.backward()
         torch.nn.utils.clip_grad_norm_(model.parameters(), 0.5)
         optimizer.step()
@@ -121,8 +138,13 @@ def evaluate(loader: DataLoader):  # validation
     total_loss = 0.0
     with torch.no_grad():
         for i, data in enumerate(loader):
-            vseqs, vmasks, vlabels = data
-            voutputs = model(vseqs, vmasks)
+            vseqs, vlabels = data["Sequence"], data["Class"]
+            # vmasks = torch.ones(sequences.size(dim=0), sequences.size(dim=0))
+            num_classes = 3
+            # vlabels_one_hot = torch.zeros(vlabels.size(0), num_classes)
+            # vlabels_one_hot.scatter_(1, vlabels.unsqueeze(1), 1)
+            # vlabels_one_hot = vlabels_one_hot.to(device)
+            voutputs = model(vseqs, device)  # removed masks
             vloss = criterion(voutputs, vlabels)
             total_loss += vloss
     return total_loss / (len(loader))

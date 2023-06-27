@@ -98,13 +98,24 @@ class tokenizer(object):
 class SequenceDataset(Dataset):
     """Dataset Class Extension for Loader"""
 
-    def __init__(self, sequences, masks, labels):
-        self.sequences = sequences
-        self.labels = labels
-        self.masks = masks
+    def __init__(self, sequences, masks, labels, device='cuda', num_classes=3):
+        self.sequences = torch.from_numpy(sequences)
+        self.labels = torch.from_numpy(labels)
+        self.masks = torch.from_numpy(masks)
 
         if -1 in self.labels:
             self.labels += 1
+
+        # Scatter the Labels
+        labels_one_hot = torch.zeros(self.labels.size(0), num_classes)
+        labels_one_hot.scatter_(1, self.labels.unsqueeze(1), 1)
+        labels_one_hot = labels_one_hot.long()
+        self.labels = labels_one_hot.to(device)
+
+        # Send the other Data to the GPUs as well. 
+        self.sequences = self.sequences.to(device)
+        self.masks = self.masks.to(device)
+
 
     def __len__(self):
         return len(self.labels)
@@ -113,7 +124,7 @@ class SequenceDataset(Dataset):
         label = self.labels[idx]
         sequences = self.sequences[idx]
         masks = self.masks[idx]
-        sample = {"Sequence": torch.from_numpy(sequences),
-                  "Mask": torch.from_numpy(masks),
+        sample = {"Sequence": sequences,
+                  "Mask": masks,
                   "Class": label}
         return sample
