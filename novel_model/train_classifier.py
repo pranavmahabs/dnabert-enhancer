@@ -154,8 +154,8 @@ def evaluate(loader: DataLoader):  # validation
             vloss = criterion(voutputs, vlabels)
             total_loss += vloss
 
-            _, predicted_labels = torch.argmax(voutputs, dim=1)
-            _, true_labels = torch.argmax(vlabels, dim=1)
+            predicted_labels = torch.argmax(voutputs, dim=1)
+            true_labels = torch.argmax(vlabels, dim=1)
             total_correct += (predicted_labels == vlabels).sum().item()
             total_samples += vlabels.size()
 
