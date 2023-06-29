@@ -109,7 +109,7 @@ class SequenceDataset(Dataset):
         # Scatter the Labels
         labels_one_hot = torch.zeros(self.labels.size(0), num_classes)
         labels_one_hot.scatter_(1, self.labels.unsqueeze(1), 1)
-        labels_one_hot = labels_one_hot.long()
+        # labels_one_hot = labels_one_hot.long()
         self.labels = labels_one_hot.to(device)
 
         # Send the other Data to the GPUs as well. 

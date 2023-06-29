@@ -31,18 +31,22 @@ tkr = dataset["tokenizer"]
 
 # Instantiate the Model
 ntokens = len(tkr.kmer2idx.keys())
-d_hid = 100
-nlayers = 2
-nhead = 2
+d_model = 256
+d_hidden = 512
+nlayers = 3
+nhead = 4
 dropout = 0.2
-model = GenoClassifier(ntokens, d_hid, nlayers, nhead, dropout)
+num_classes = 3
+model = GenoClassifier(ntokens, d_model, d_hidden, nlayers, nhead, dropout, num_classes)
 
 # Set up CUDA Configurations with the GPU
+device_name = 'cuda' if torch.cuda.is_available() else 'cpu'
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print(torch.cuda.device_count(), torch.cuda.get_device_name(0))
-
+print(device)
 model = nn.DataParallel(model)
 model.to(device)
+use_amp = True
 
 pytorch_total_params = sum(p.numel() for p in model.parameters())
 trainable = sum(p.numel() for p in model.parameters() if p.requires_grad)
@@ -69,9 +73,9 @@ test_mask = np.ones(test_seq.shape)
 test_dataset = SequenceDataset(test_seq, test_mask, test_lab, device)
 
 # Prepare Dataset!
-BATCH_SIZE = 32
+BATCH_SIZE = 128
 # GPUS = 4
-EPOCH = 10
+EPOCH = 5
 num_samples = len(train_seq)
 
 train_loader = DataLoader(train_dataset, batch_size=BATCH_SIZE, shuffle=True)
@@ -90,7 +94,7 @@ lr = 5.0
 optimizer = torch.optim.SGD(model.parameters(), lr=lr)
 scheduler = torch.optim.lr_scheduler.StepLR(optimizer, 1.0, gamma=0.95)
 num_batches = len(train_loader)
-
+scaler = torch.cuda.amp.GradScaler(enabled=use_amp)
 
 def train_epoch(epoch):
     model.train(True)
@@ -104,19 +108,23 @@ def train_epoch(epoch):
         sequences = data["Sequence"]
         masks = torch.ones(sequences.size(dim=0), sequences.size(dim=0))
         labels = data["Class"]
-        num_classes = 3
-        # labels_one_hot = torch.zeros(labels.size(0), num_classes)
-        # labels_one_hot.scatter_(1, labels.unsqueeze(1), 1)
-        # labels_one_hot = labels_one_hot.to(device)
-        # Zero Gradients for every batch
         optimizer.zero_grad()
-        # Make predictions for this batch
-        output = model(sequences, device)  # removed masks
-        # Update Learning Weights
-        loss = criterion(output, labels)
-        loss.backward()
+
+        with torch.autocast(device_type=device_name, dtype=torch.float16):
+            # Make predictions for this batch
+            output, attn = model(sequences, device)  # removed masks
+            assert output.dtype is torch.float16
+            # Update Learning Weights
+            loss = criterion(output, labels)
+
+        scaler.scale(loss).backward()
+        scaler.unscale_(optimizer)
         torch.nn.utils.clip_grad_norm_(model.parameters(), 0.5)
-        optimizer.step()
+
+        scaler.step(optimizer)
+        scaler.update()
+        # loss.backward()
+        # optimizer.step()
         # Print Status
         total_loss += loss.item()
         if i % log_interval == 0 and i > 0:
@@ -136,18 +144,24 @@ def train_epoch(epoch):
 def evaluate(loader: DataLoader):  # validation
     model.eval()
     total_loss = 0.0
+    total_samples = 0
+    total_correct = 0
+
     with torch.no_grad():
         for i, data in enumerate(loader):
             vseqs, vlabels = data["Sequence"], data["Class"]
-            # vmasks = torch.ones(sequences.size(dim=0), sequences.size(dim=0))
-            num_classes = 3
-            # vlabels_one_hot = torch.zeros(vlabels.size(0), num_classes)
-            # vlabels_one_hot.scatter_(1, vlabels.unsqueeze(1), 1)
-            # vlabels_one_hot = vlabels_one_hot.to(device)
-            voutputs = model(vseqs, device)  # removed masks
+            voutputs, vattn = model(vseqs, device)  # removed masks
             vloss = criterion(voutputs, vlabels)
             total_loss += vloss
-    return total_loss / (len(loader))
+
+            _, predicted_labels = torch.argmax(voutputs, dim=1)
+            _, true_labels = torch.argmax(vlabels, dim=1)
+            total_correct += (predicted_labels == vlabels).sum().item()
+            total_samples += vlabels.size()
+
+    accuracy = total_correct / total_samples
+    average_loss = total_loss / len(loader)
+    return accuracy, average_loss
 
 
 # TRAINING: Epochs Loop
@@ -159,7 +173,7 @@ for epoch in range(1, EPOCH + 1):
     epoch_start_time = time.time()
     print("EPOCH {}:".format(epoch))
     train_epoch(epoch)
-    vloss = evaluate(val_loader)
+    accuracy, vloss = evaluate(val_loader)
     val_ppl = math.exp(vloss)
     elapsed = time.time() - epoch_start_time
 
@@ -167,6 +181,7 @@ for epoch in range(1, EPOCH + 1):
     print(
         f"| end of epoch {epoch:3d} | time: {elapsed:5.2f}s | "
         f"valid loss {vloss:5.2f} | valid ppl {val_ppl:8.2f}"
+        f"valid accuracy {accuracy*100:.2f}%"
     )
     print("-" * 89)
 

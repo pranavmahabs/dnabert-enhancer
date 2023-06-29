@@ -4,35 +4,22 @@ from transformer import GeneTransformer
 
 
 class GenoClassifier(nn.Module):
-    def __init__(self, vocab_size, d_model, N, heads, dropout):
+    def __init__(self, vocab_size, d_model, d_hidden, N, heads, dropout, num_classes):
         super().__init__()
         self.transformer = GeneTransformer(
-            vocab_size, d_model, heads, d_model, N, dropout
+            vocab_size, d_model, heads, d_hidden, N, dropout
         )
+        ## GRU Handle Sequential Output of Transformer
+        LSTM_layers = 4
+        self.lstm = nn.LSTM(d_model, d_hidden, LSTM_layers, batch_first=True)
         ## Classifier
-        self.ff = nn.Linear(d_model, d_model)
-        self.drop = nn.Dropout(dropout)
-        self.ff2 = nn.Linear(d_model, 3)
+        self.ff = nn.Linear(d_hidden, num_classes)
 
-    def forward(self, x, device):
-        x_mask = torch.ones(x.size(dim=0), x.size(dim=0))
+    def forward(self, x, device, predict=False):
+        x_mask = torch.ones(x.size(dim=0), x.size(dim=0)).to(device)
         x_mask = x_mask.to(device)
-        src = self.transformer(x, x_mask)
-        ff1 = self.drop(self.ff(src))
-        logits = self.ff2(ff1)
-        return logits
-
-
-class GenoScanner(nn.Module):
-    def __init__(self, vocab_size, d_model, N, heads, dropout):
-        super().__init__()
-        self.transformer = GeneTransformer(
-            vocab_size, d_model, heads, d_model, N, dropout
-        )
-        ## TODO: Support MLM and NSP
-
-    def forward(self, x, x_mask):
-        src = self.transformer(x, x_mask)
-        ff1 = self.drop(self.ff(src))
-        logits = nn.Softmax(self.ff2(ff1))
-        return logits
+        src, attention_scores = self.transformer(x, x_mask, predict=predict)
+        lstm_output, _ = self.lstm(src)
+        last_output = lstm_output[:,-1,:]
+        logits = self.ff(last_output)
+        return logits, attention_scores
