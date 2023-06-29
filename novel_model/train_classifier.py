@@ -156,8 +156,8 @@ def evaluate(loader: DataLoader):  # validation
 
             predicted_labels = torch.argmax(voutputs, dim=1)
             true_labels = torch.argmax(vlabels, dim=1)
-            total_correct += (predicted_labels == vlabels).sum().item()
-            total_samples += vlabels.size()
+            total_correct += (predicted_labels == true_labels).sum().item()
+            total_samples += vlabels.size(dim=0)
 
     accuracy = total_correct / total_samples
     average_loss = total_loss / len(loader)

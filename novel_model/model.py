@@ -12,6 +12,7 @@ class GenoClassifier(nn.Module):
         ## GRU Handle Sequential Output of Transformer
         LSTM_layers = 4
         self.lstm = nn.LSTM(d_model, d_hidden, LSTM_layers, batch_first=True)
+        self.lstm.flatten_parameters()
         ## Classifier
         self.ff = nn.Linear(d_hidden, num_classes)
 
