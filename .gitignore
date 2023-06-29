@@ -1,0 +1,6 @@
+data/best_model_params.pt
+data/data.p
+dnabert_model/__pycache__
+dnabert_model/apex
+dnabert_model/DNABERT6/pytorch_model.bin
+novel_model/__pycache__
