@@ -151,8 +151,8 @@ def create_dataset(
     print(len(neg_test_data))
 
     # Concatenate the positive and negative datasets in preparation for final return
-    train_data = pos_train_data + neg_train_data
-    train_label = pos_train_label + neg_train_label
+    train_data = pos_train_data * 7 + neg_train_data
+    train_label = pos_train_label * 7 + neg_train_label
     val_data = pos_val_data + neg_val_data
     val_label = pos_val_label + neg_val_label
     test_data = pos_test_data + neg_test_data
@@ -160,10 +160,10 @@ def create_dataset(
 
     # Return a dictionary containing all of the data! Could save as a pickle file for ease.
     return dict(
-        train_seq=np.array(train_data),
-        train_lab=np.array(train_label),
-        val_seq=np.array(val_data),
-        val_lab=np.array(val_label),
+        # train_seq=np.array(train_data),
+        # train_lab=np.array(train_label),
+        # val_seq=np.array(val_data),
+        # val_lab=np.array(val_label),
         test_seq=np.array(test_data),
         test_lab=np.array(test_label),
         kmer2idx=tkr.kmer2idx,
@@ -231,7 +231,7 @@ def create_train(total_bed, fasta, build_v=True, vocab_file="vocab"):
 
 
 def create_pickle(pos, neg, data_folder, fasta, K, build_v):
-    with open(f"{data_folder}/data.p", "wb") as pickle_file:
+    with open(f"{data_folder}/test.p", "wb") as pickle_file:
         pickle.dump(
             create_dataset(pos, neg, data_folder, fasta, build_v=build_v, K=K),
             pickle_file,

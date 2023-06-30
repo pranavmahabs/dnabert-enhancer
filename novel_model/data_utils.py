@@ -58,14 +58,14 @@ class tokenizer(object):
 
     def ktokenize(self, sequence):
         sequence = sequence[0]
-        print(len(sequence))
+        # print(len(sequence))
         chopped = len(sequence) % self.k
         sequence = sequence[: len(sequence) - chopped]
 
         split_site = [sequence[i: i + self.k]
                       for i in range(0, len(sequence), self.k)]
-        if chopped > 0:
-            print(f"{chopped} nucleotides were chopped from the sequence.")
+        # if chopped > 0:
+            # print(f"{chopped} nucleotides were chopped from the sequence.")
         return split_site
 
     def pad(self, sequence, window_size):
@@ -108,13 +108,12 @@ class SequenceDataset(Dataset):
 
         # Scatter the Labels
         labels_one_hot = torch.zeros(self.labels.size(0), num_classes)
-        labels_one_hot.scatter_(1, self.labels.unsqueeze(1), 1)
-        # labels_one_hot = labels_one_hot.long()
-        self.labels = labels_one_hot.to(device)
-
-        # Send the other Data to the GPUs as well. 
-        self.sequences = self.sequences.to(device)
-        self.masks = self.masks.to(device)
+        self.labels = labels_one_hot.scatter_(1, self.labels.unsqueeze(1), 1)
+        
+        if device != "None":
+            self.labels = labels_one_hot.to(device) 
+            self.sequences = self.sequences.to(device)
+            self.masks = self.masks.to(device)
 
 
     def __len__(self):

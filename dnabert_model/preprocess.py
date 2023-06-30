@@ -136,6 +136,7 @@ def create_dataset(
 
     # Concatenate the positive and negative datasets in preparation for final return
     train_data = pos_train_data + neg_train_data
+    print(pos_train_data.shape, neg_train_data.shape, train_data.shape)
     train_label = pos_train_label + neg_train_label
     val_data = pos_val_data + neg_val_data
     val_label = pos_val_label + neg_val_label

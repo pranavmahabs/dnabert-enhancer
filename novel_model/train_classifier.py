@@ -16,9 +16,9 @@ from model import GenoClassifier
 pos_bed_file = sys.argv[1]
 neg_bed_file = sys.argv[2]
 results_dir = "data/"
-fasta = "/data/Dcode/common/hg38.fa"
+fasta = "/data/Dcode/common/genomes/hg38/hg38.fa"
 K = 4
-# create_pickle(pos_bed_file, neg_bed_file, results_dir, fasta, K=K, build_v=False)
+create_pickle(pos_bed_file, neg_bed_file, results_dir, fasta, K=K, build_v=False)
 
 # TODO: Read in the Vocab and the Pickle File
 with open(results_dir + "data.p", "rb") as handle:
@@ -31,10 +31,10 @@ tkr = dataset["tokenizer"]
 
 # Instantiate the Model
 ntokens = len(tkr.kmer2idx.keys())
-d_model = 256
-d_hidden = 512
-nlayers = 3
-nhead = 4
+d_model = 144
+d_hidden = 256
+nlayers = 6
+nhead = 12
 dropout = 0.2
 num_classes = 3
 model = GenoClassifier(ntokens, d_model, d_hidden, nlayers, nhead, dropout, num_classes)
@@ -58,29 +58,34 @@ print(pytorch_total_params, trainable)
 #####################################################################
 
 # Create and Define Batches
-# Load the Data
+# Load the Training and Validation Data
 train_seq, train_lab = dataset["train_seq"], dataset["train_lab"]
+counts = {
+    -1: np.count_nonzero(train_lab == -1),
+    0: np.count_nonzero(train_lab == 0),
+    1: np.count_nonzero(train_lab == 1)
+}
+
+# Print the counts
+for value, count in counts.items():
+    print(f"Class {value}: {count} occurrences")
+
 train_mask = np.ones(train_seq.shape)
 train_dataset = SequenceDataset(train_seq, train_mask, train_lab, device)
-print(train_seq.shape, train_lab.shape, train_mask.shape)
 
 val_seq, val_lab = dataset["val_seq"], dataset["val_lab"]
 val_mask = np.ones(val_seq.shape)
 val_dataset = SequenceDataset(val_seq, val_mask, val_lab, device)
 
-test_seq, test_lab = dataset["test_seq"], dataset["test_lab"]
-test_mask = np.ones(test_seq.shape)
-test_dataset = SequenceDataset(test_seq, test_mask, test_lab, device)
-
 # Prepare Dataset!
-BATCH_SIZE = 128
+BATCH_SIZE = 256
 # GPUS = 4
 EPOCH = 5
 num_samples = len(train_seq)
 
 train_loader = DataLoader(train_dataset, batch_size=BATCH_SIZE, shuffle=True)
 val_loader = DataLoader(val_dataset, batch_size=BATCH_SIZE, shuffle=True)
-test_loader = DataLoader(test_dataset, batch_size=BATCH_SIZE, shuffle=True)
+# test_loader = DataLoader(test_dataset, batch_size=BATCH_SIZE, shuffle=True)
 
 
 #####################################################################
@@ -89,6 +94,7 @@ test_loader = DataLoader(test_dataset, batch_size=BATCH_SIZE, shuffle=True)
 
 
 # Train Function
+# class_weights = torch.FloatTensor([5.46, 1.0, 8.35]).to(device)
 criterion = nn.CrossEntropyLoss()
 lr = 5.0
 optimizer = torch.optim.SGD(model.parameters(), lr=lr)
@@ -167,7 +173,7 @@ def evaluate(loader: DataLoader):  # validation
 # TRAINING: Epochs Loop
 best_val_loss = float("inf")
 # with TemporaryDirectory() as tempdir:
-best_model_params_path = os.path.join(results_dir, "best_model_params.pt")
+best_model_params_path = os.path.join(results_dir, "best_model_params128.pt")
 
 for epoch in range(1, EPOCH + 1):
     epoch_start_time = time.time()
@@ -188,5 +194,10 @@ for epoch in range(1, EPOCH + 1):
     if vloss < best_val_loss:
         best_val_loss = vloss
         torch.save(model.state_dict(), best_model_params_path)
+        print("Saved Model because Validation Loss Improved!")
 
     scheduler.step()
+
+model2 = GenoClassifier(ntokens, d_model, d_hidden, nlayers, nhead, dropout, num_classes)
+model2.load_state_dict(torch.load("data/best_model_params.pt"))
+print("Weights can be successfully reloaded.")
