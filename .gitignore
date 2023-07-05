@@ -3,7 +3,7 @@ data/data.p
 dnabert_model/__pycache__
 dnabert_model/apex
 dnabert_model/DNABERT6/pytorch_model.bin
-novel_model/__pycache__
+simple_model/__pycache__
 dnabert_model/.ipynb_checkpoints/
 dnabert_model/DNABERT/pytorch_model.bin
 data/test.tsv
