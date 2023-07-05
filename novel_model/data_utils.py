@@ -113,7 +113,7 @@ class SequenceDataset(Dataset):
         if device != "None":
             self.labels = labels_one_hot.to(device) 
             self.sequences = self.sequences.to(device)
-            self.masks = self.masks.to(device)
+            # self.masks = (self.masks.double()).to(device)
 
 
     def __len__(self):
@@ -122,8 +122,8 @@ class SequenceDataset(Dataset):
     def __getitem__(self, idx):
         label = self.labels[idx]
         sequences = self.sequences[idx]
-        masks = self.masks[idx]
+        # masks = self.masks[idx]
         sample = {"Sequence": sequences,
-                  "Mask": masks,
+                #   "Mask": masks,
                   "Class": label}
         return sample
