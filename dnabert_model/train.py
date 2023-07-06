@@ -209,4 +209,5 @@ def train():
 
 
 if __name__ == "__main__":
+    # TODO: read in the correct model to train etc. etc.
     train()

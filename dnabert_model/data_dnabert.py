@@ -44,6 +44,7 @@ class SupervisedDataset(Dataset):
                 torch.distributed.barrier()
 
             logging.warning(f"Using {kmer}-mer as input...")
+            # TODO: MAKE SURE THAT THE TEXTS ARE PROPERLY FORMATTED.
             # texts = load_or_generate_kmer(data_path, texts, kmer)
 
             if torch.distributed.get_rank() == 0:
