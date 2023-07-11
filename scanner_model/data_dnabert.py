@@ -1,4 +1,6 @@
 import csv
+import sys
+import h5py
 import logging
 from dataclasses import dataclass
 from typing import Dict, Sequence
@@ -8,6 +10,14 @@ import transformers
 import sklearn
 import numpy as np
 from torch.utils.data import Dataset
+
+from tokenizer import (
+    DNATokenizer,
+    PRETRAINED_INIT_CONFIGURATION,
+    PRETRAINED_VOCAB_FILES_MAP,
+    PRETRAINED_POSITIONAL_EMBEDDINGS_SIZES,
+    VOCAB_KMER,
+)
 
 
 # TODO: Reimplement to reflect the dataset for DNABERT-1
@@ -109,3 +119,23 @@ class DataCollatorForSupervisedDataset(object):
             labels=labels,
             attention_mask=input_ids.ne(self.tokenizer.pad_token_id),
         )
+
+
+def pickle_dataset(tsv_files, config):
+    tokenizer = DNATokenizer(
+        vocab_file=PRETRAINED_VOCAB_FILES_MAP["vocab_file"][config],
+        do_lower_case=PRETRAINED_INIT_CONFIGURATION[config]["do_lower_case"],
+        max_len=PRETRAINED_POSITIONAL_EMBEDDINGS_SIZES[config],
+    )
+    outfile = name + ".h5"
+    hf = h5py.File(outfile, "w")
+    for tsv_file, name in zip(tsv_files, ["train", "val", "test"]):
+        dataset = SupervisedDataset(tsv_file, tokenizer)
+        hf.create_dataset(name, data=dataset)
+    hf.close()
+
+
+if __name__ == "__main__":
+    files = []
+    config = "dna6"
+    pickle_dataset(files, config)
