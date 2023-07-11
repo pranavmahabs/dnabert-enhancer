@@ -1,6 +1,6 @@
-DATA_PATH="/Users/pranavmahableshwarkar/CS/NIH/DNATransformerClassifier/data/"
-MODEL_PATH="/Users/pranavmahableshwarkar/CS/NIH/DNATransformerClassifier/dnabert_model/pretrained_6mer/"
-OUTPATH="/Users/pranavmahableshwarkar/CS/NIH/DNATransformerClassifier/dnabert_model/output/"
+DATA_PATH="/data/Dcode/pranav/genoscanner/data/"
+MODEL_PATH="/data/Dcode/pranav/genoscanner/scanner_model/pretrained_6mer/"
+OUTPATH="/data/Dcode/pranav/genoscanner/output/"
 
 # Command to be executed with the --accelerate or -a flag
 accelerate_command() {
@@ -46,6 +46,7 @@ normal_command() {
             --gradient_accumulation_steps 1 \
             --learning_rate 2e-4 \
             --num_train_epochs 8 \
+            --fp16 True \
             --save_steps 200 \
             --output_dir $OUTPATH \
             --evaluation_strategy steps \
@@ -55,7 +56,6 @@ normal_command() {
             --overwrite_output_dir True \
             --log_level info \
             --find_unused_parameters False \
-            --use_mps_device \
 
 }
 
