@@ -18,21 +18,22 @@ class SupervisedDataset(Dataset):
         self,
         data_path: str,
         tokenizer: transformers.PreTrainedTokenizer,
-        kmer: int = -1,
+        kmer: int = 6,
     ):
+        assert kmer in [3, 4, 5, 6], "kmer must be 3, 4, 5, or 6"
         super(SupervisedDataset, self).__init__()
 
         # load data from the disk
         with open(data_path, "r") as f:
-            data = list(csv.reader(f))[1:]
+            data = list(csv.reader(f, delimiter="\t"))[1:]
         if len(data[0]) == 2:
             # data is in the format of [text, label]
-            logging.warning("Perform single sequence classification...")
+            print("Perform single sequence classification...")
             texts = [d[0] for d in data]
             labels = [int(d[1]) for d in data]
         elif len(data[0]) == 3:
             # data is in the format of [text1, text2, label]
-            logging.warning("Perform sequence-pair classification...")
+            print("Perform sequence-pair classification...")
             texts = [[d[0], d[1]] for d in data]
             labels = [int(d[2]) for d in data]
         else:
@@ -40,15 +41,24 @@ class SupervisedDataset(Dataset):
 
         if kmer != -1:
             # only write file on the first process
-            if torch.distributed.get_rank() not in [0, -1]:
-                torch.distributed.barrier()
+            # if torch.distributed.get_rank() not in [0, -1]:
+            #     torch.distributed.barrier()
 
-            logging.warning(f"Using {kmer}-mer as input...")
-            # TODO: MAKE SURE THAT THE TEXTS ARE PROPERLY FORMATTED.
-            # texts = load_or_generate_kmer(data_path, texts, kmer)
+            print(f"Tokenizing input with {kmer}-mer as input...")
+            with open(data_path, "r", newline="\n") as file:
+                reader = csv.reader(file, delimiter="\t")
+                texts = list(reader)
 
-            if torch.distributed.get_rank() == 0:
-                torch.distributed.barrier()
+            # Drop the header - note that this will drop the first sample
+            #                   if the header is not included. 
+            texts = texts[1:]
+
+            texts = np.asarray(texts)
+            labels = texts[:, 1]
+            texts = list(texts[:, 0])
+            # if torch.distributed.get_rank() == 0:
+            #     torch.distributed.barrier()
+        
 
         output = tokenizer(
             texts,
@@ -60,8 +70,10 @@ class SupervisedDataset(Dataset):
 
         self.input_ids = output["input_ids"]
         self.attention_mask = output["attention_mask"]
-        self.labels = labels
-        self.num_labels = len(set(labels))
+        self.labels = labels.astype(np.int8)
+        if -1 in self.labels:
+            self.labels += 1
+        self.num_labels = len(set(self.labels))
 
     def __len__(self):
         return len(self.input_ids)

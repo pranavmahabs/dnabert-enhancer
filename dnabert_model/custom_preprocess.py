@@ -3,7 +3,18 @@ import numpy as np
 import sys
 from Bio import SeqIO
 from pybedtools import BedTool
-from data_utils import seq2kmer
+from motif_utils import seq2kmer
+
+import argparse
+from dataclasses import dataclass
+
+@dataclass
+class ProcessInput:
+    pos_bed: str
+    neg_bed: str
+    fasta: str
+    k: int
+    res_dir: str
 
 train_chromosomes = [
     "chr1",
@@ -47,7 +58,7 @@ def generate_tsv(sequences, labels, tsv_filename):
         print(len(sequences), len(labels))
         print("Error. Sequences and labels are not of the same length.")
 
-    tsv_content = ""
+    tsv_content = "sequence\tlabel\n"
     for sequence, label in zip(sequences, labels):
         tsv_content += f"{sequence}\t{label}\n"
 
@@ -55,17 +66,12 @@ def generate_tsv(sequences, labels, tsv_filename):
         tsv_file.write(tsv_content)
 
 
-def create_dataset(
-    pos_bed_file,
-    neg_bed_file,
-    results_dir,
-    fasta,
-    K,
-):
+def create_dataset(param):
     """
     Generate the kmer-ized dataset in preparation of model training. 
     """
-
+    pos_bed_file, neg_bed_file, results_dir, fasta, K = param.pos_bed, param.neg_bed, param.fasta, param.K, param.res_dir
+    
     # Load in the genome prior to building the dataset.
     chrom2seq = get_chrom2seq(fasta)
 
@@ -94,7 +100,7 @@ def create_dataset(
         for r in bed_list:
             # Maximum sequence length of 512
             _seq = chrom2seq[r.chrom][r.start + 250: r.stop - 251]
-            kmerized = seq2kmer(str(_seq), 6)
+            kmerized = seq2kmer(str(_seq), K)
             data_list.append(kmerized)
             # Insert the Label into the Approriate List
             # 1:AE - Enhancers with H3K27AC; -1:PE, Enhancers only with H3K4me1
@@ -148,14 +154,18 @@ def create_dataset(
         [train_label, val_label, test_label],
         ["train.tsv", "val.tsv", "test.csv"]
     ):
-        generate_tsv(data, label, filename)
+        generate_tsv(data, label, results_dir + filename)
 
 
 if __name__ == "__main__":
-    pos = sys.argv[1]
-    neg = sys.argv[2]
-    res = ""
-    fasta = "/data/Dcode/common/genomes/hg38/hg38.fa"
-    K = 6
+    parser = argparse.ArgumentParser(description='Process input files.')
+    parser.add_argument('--negative-file', required=True, help='Path to the negative file')
+    parser.add_argument('--positive-file', required=True, help='Path to the positive file')
+    parser.add_argument('--fast-file', required=True, help='Path to the fast file')
+    parser.add_argument('--k', type=int, required=True, help='Value for K')
+    parser.add_argument('--results-folder', required=True, help='Path to the results folder')
 
-    create_dataset(pos, neg, res, fasta, K)
+    args = parser.parse_args()
+
+    param = ProcessInput(args.negative_file, args.positive_file, args.fast_file, args.k, args.results_folder)
+    create_dataset(param)

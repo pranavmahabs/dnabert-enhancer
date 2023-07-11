@@ -31,11 +31,13 @@ VOCAB_FILES_NAMES = {"vocab_file": "vocab.txt"}
 
 
 PRETRAINED_VOCAB_FILES_MAP = {
+    # TODO: download remaining prior to launch.
     "vocab_file": {
         "dna3": "https://raw.githubusercontent.com/jerryji1993/DNABERT/master/src/transformers/dnabert-config/bert-config-3/vocab.txt",
         "dna4": "https://raw.githubusercontent.com/jerryji1993/DNABERT/master/src/transformers/dnabert-config/bert-config-4/vocab.txt",
         "dna5": "https://raw.githubusercontent.com/jerryji1993/DNABERT/master/src/transformers/dnabert-config/bert-config-5/vocab.txt",
-        "dna6": "https://raw.githubusercontent.com/jerryji1993/DNABERT/master/src/transformers/dnabert-config/bert-config-6/vocab.txt",
+        # "dna6": "https://raw.githubusercontent.com/jerryji1993/DNABERT/master/src/transformers/dnabert-config/bert-config-6/vocab.txt",
+        "dna6": "/Users/pranavmahableshwarkar/CS/NIH/DNATransformerClassifier/data/vocab6",
     }
 }
 
@@ -105,6 +107,7 @@ class DNATokenizer(PreTrainedTokenizer):
     def __init__(
         self,
         vocab_file,
+        max_len,
         do_lower_case=False,
         never_split=None,
         unk_token="[UNK]",
@@ -140,12 +143,13 @@ class DNATokenizer(PreTrainedTokenizer):
             mask_token=mask_token,
             **kwargs,
         )
-        self.max_len_single_sentence = (
-            self.max_len - 2
-        )  # take into account special tokens
-        self.max_len_sentences_pair = (
-            self.max_len - 3
-        )  # take into account special tokens
+        # self.max_len = max_len
+        # self.max_len_single_sentence = (
+        #     self.max_len - 2
+        # )  # take into account special tokens
+        # self.max_len_sentences_pair = (
+        #     self.max_len - 3
+        # )  # take into account special tokens
 
         if not os.path.isfile(vocab_file):
             raise ValueError(

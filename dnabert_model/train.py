@@ -5,6 +5,7 @@ import csv
 import copy
 import json
 import logging
+import collections
 from dataclasses import dataclass, field
 from typing import Optional, Dict, Sequence, Tuple, List
 
@@ -21,10 +22,17 @@ from peft import (
 )
 
 from data_dnabert import SupervisedDataset, DataCollatorForSupervisedDataset
-
+from tokenizer import (
+    DNATokenizer, 
+    PRETRAINED_INIT_CONFIGURATION, 
+    PRETRAINED_VOCAB_FILES_MAP, 
+    PRETRAINED_POSITIONAL_EMBEDDINGS_SIZES, 
+    VOCAB_KMER
+)
 
 @dataclass
 class ModelArguments:
+    model_config: str = field(default="dna6", metadata={"help": "Choose dna3, dna4, dna5, or dna6"})
     model_name_or_path: Optional[str] = field(default="facebook/opt-125m")
     use_lora: bool = field(default=False, metadata={"help": "whether to use LoRA"})
     lora_r: int = field(default=8, metadata={"help": "hidden dimension for LoRA"})
@@ -44,7 +52,7 @@ class DataArguments:
     )
     kmer: int = field(
         default=-1,
-        metadata={"help": "k-mer for input sequence. -1 means not using k-mer."},
+        metadata={"help": "k-mer for input sequence. Must be 3, 4, 5, or 6."},
     )
 
 
@@ -64,7 +72,7 @@ class TrainingArguments(transformers.TrainingArguments):
     logging_steps: int = field(default=100)
     save_steps: int = field(default=100)
     eval_steps: int = field(default=100)
-    evaluation_strategy: str = (field(default="steps"),)
+    evaluation_strategy: str = (field(default='steps'))
     warmup_steps: int = field(default=50)
     weight_decay: float = field(default=0.01)
     learning_rate: float = field(default=1e-4)
@@ -107,6 +115,11 @@ def calculate_metric_with_sklearn(logits: np.ndarray, labels: np.ndarray):
         "recall": sklearn.metrics.recall_score(
             labels, predictions, average="macro", zero_division=0
         ),
+        # TODO: idk what to do with this tbh
+        # "auc/roc score": sklearn.metrics.roc_auc_score(
+        #     ## Expects that labels are provided in a one-hot encoded format. 
+        #     labels, logits,
+        # ),
     }
 
 
@@ -126,36 +139,42 @@ def train():
     )
     model_args, data_args, training_args = parser.parse_args_into_dataclasses()
 
-    # load tokenizer
-    tokenizer = transformers.AutoTokenizer.from_pretrained(
-        model_args.model_name_or_path,
-        cache_dir=training_args.cache_dir,
-        model_max_length=training_args.model_max_length,
-        padding_side="right",
-        use_fast=True,
-        trust_remote_code=True,
+    tokenizer = DNATokenizer(
+        vocab_file = PRETRAINED_VOCAB_FILES_MAP["vocab_file"][model_args.model_config],
+        do_lower_case = PRETRAINED_INIT_CONFIGURATION[model_args.model_config]["do_lower_case"],
+        max_len = PRETRAINED_POSITIONAL_EMBEDDINGS_SIZES[model_args.model_config]
     )
-
-    if "InstaDeepAI" in model_args.model_name_or_path:
-        tokenizer.eos_token = tokenizer.pad_token
 
     # define datasets and data collator
     train_dataset = SupervisedDataset(
         tokenizer=tokenizer,
-        data_path=os.path.join(data_args.data_path, "train.csv"),
+        data_path=os.path.join(data_args.data_path, "test.tsv"), ##TODO: change back to train.tsv
         kmer=data_args.kmer,
     )
     val_dataset = SupervisedDataset(
         tokenizer=tokenizer,
-        data_path=os.path.join(data_args.data_path, "dev.csv"),
+        data_path=os.path.join(data_args.data_path, "val.tsv"),
         kmer=data_args.kmer,
     )
     test_dataset = SupervisedDataset(
         tokenizer=tokenizer,
-        data_path=os.path.join(data_args.data_path, "test.csv"),
+        data_path=os.path.join(data_args.data_path, "test.tsv"),
         kmer=data_args.kmer,
     )
     data_collator = DataCollatorForSupervisedDataset(tokenizer=tokenizer)
+
+
+    id2label = {
+        0 : "Poised Enhancer",
+        1 : "Noise",
+        2 : "Active Enhancer"
+    }
+    label2id = {
+        "Poised Enhancer" : 0,
+        "Noise" : 1,
+        "Active Enhancer" : 2
+    }
+
 
     # load model
     model = transformers.AutoModelForSequenceClassification.from_pretrained(
@@ -163,6 +182,8 @@ def train():
         cache_dir=training_args.cache_dir,
         num_labels=train_dataset.num_labels,
         trust_remote_code=True,
+        id2label=id2label,
+        label2id=label2id,
     )
 
     # configure LoRA
@@ -209,5 +230,4 @@ def train():
 
 
 if __name__ == "__main__":
-    # TODO: read in the correct model to train etc. etc.
     train()
