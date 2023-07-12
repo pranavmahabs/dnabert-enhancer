@@ -1,6 +1,6 @@
 import csv
 import sys
-import h5py
+import pickle
 import logging
 from dataclasses import dataclass
 from typing import Dict, Sequence
@@ -127,15 +127,18 @@ def pickle_dataset(tsv_files, config):
         do_lower_case=PRETRAINED_INIT_CONFIGURATION[config]["do_lower_case"],
         max_len=PRETRAINED_POSITIONAL_EMBEDDINGS_SIZES[config],
     )
-    outfile = name + ".h5"
-    hf = h5py.File(outfile, "w")
-    for tsv_file, name in zip(tsv_files, ["train", "val", "test"]):
+    outfile = "supervised_dataset.p"
+    to_dump = {}
+    for tsv_file, name in zip(tsv_files, ["val", "train", "test"]):
         dataset = SupervisedDataset(tsv_file, tokenizer)
-        hf.create_dataset(name, data=dataset)
-    hf.close()
+        to_dump[name] = dataset
+
+    with open(outfile, 'wb') as handle:
+        pickle.dump(to_dump, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
 
 if __name__ == "__main__":
-    files = []
+    file_base = "/data/Dcode/pranav/genoscanner/data/"
+    files = [file_base + "val.tsv", file_base + "train.tsv", file_base + "test.tsv"]
     config = "dna6"
     pickle_dataset(files, config)

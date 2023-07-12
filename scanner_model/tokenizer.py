@@ -33,11 +33,11 @@ VOCAB_FILES_NAMES = {"vocab_file": "vocab.txt"}
 PRETRAINED_VOCAB_FILES_MAP = {
     # TODO: download remaining prior to launch.
     "vocab_file": {
-        "dna3": "https://raw.githubusercontent.com/jerryji1993/DNABERT/master/src/transformers/dnabert-config/bert-config-3/vocab.txt",
-        "dna4": "https://raw.githubusercontent.com/jerryji1993/DNABERT/master/src/transformers/dnabert-config/bert-config-4/vocab.txt",
-        "dna5": "https://raw.githubusercontent.com/jerryji1993/DNABERT/master/src/transformers/dnabert-config/bert-config-5/vocab.txt",
+        "dna3": "/data/Dcode/pranav/genoscanner/data/vocab3",
+        "dna4": "/data/Dcode/pranav/genoscanner/data/vocab4",
+        "dna5": "/data/Dcode/pranav/genoscanner/data/vocab5",
         # "dna6": "https://raw.githubusercontent.com/jerryji1993/DNABERT/master/src/transformers/dnabert-config/bert-config-6/vocab.txt",
-        "dna6": "/Users/pranavmahableshwarkar/CS/NIH/DNATransformerClassifier/data/vocab6",
+        "dna6": "/data/Dcode/pranav/genoscanner/data/vocab6",
     }
 }
 
