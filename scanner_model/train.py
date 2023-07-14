@@ -10,6 +10,8 @@ from dataclasses import dataclass, field
 from typing import Optional, Dict, Sequence, Tuple, List
 
 import torch
+import pickle
+from pynvml import *
 import transformers
 import sklearn
 import numpy as np
@@ -57,9 +59,11 @@ class DataArguments:
     )
     kmer: int = field(
         default=-1,
-        metadata={"help": "k-mer for input sequence. Must be 3, 4, 5, or 6."}
+        metadata={"help": "k-mer for input sequence. Must be 3, 4, 5, or 6."},
     )
-    data_pickle: str = field(default=None, metadata={"help":"Pickle file that contains the T/T/V split."}
+    data_pickle: str = field(
+        default=None, metadata={"help": "Pickle file that contains the T/T/V split."}
+    )
 
 
 @dataclass
@@ -91,6 +95,29 @@ class TrainingArguments(transformers.TrainingArguments):
     eval_and_save_results: bool = field(default=True)
     save_model: bool = field(default=False)
     seed: int = field(default=42)
+
+
+"""
+GPU/Training Utils
+"""
+
+
+def print_gpu_utilization():
+    nvmlInit()
+    handle = nvmlDeviceGetHandleByIndex(0)
+    info = nvmlDeviceGetMemoryInfo(handle)
+    print(f"GPU memory occupies: {info.used//1024**2} MB.")
+
+
+def print_summary(result):
+    print(f"Time: {result.metrics['train_runtime']:.2f}")
+    print(f"Samples/Second: {result.metrics['train_samples_per_second']:.2f}")
+    print_gpu_utilization()
+
+
+"""
+Functionality to SAVE the model/trainer. 
+"""
 
 
 def safe_save_model_for_hf_trainer(trainer: transformers.Trainer, output_dir: str):
@@ -167,14 +194,6 @@ def train():
     )
     model_args, data_args, training_args = parser.parse_args_into_dataclasses()
 
-    
-    device_name = 'cuda' if torch.cuda.is_available() else 'cpu'
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    print(f'There are {torch.cuda.device_count()} {torch.cuda.get_device_name(0)}\'s available.')
-    print(f'Using {device_name} for training...')
-    if torch.cuda.device_count() > 1:
-        model = nn.DataParallel()
-    
     tokenizer = DNATokenizer(
         vocab_file=PRETRAINED_VOCAB_FILES_MAP["vocab_file"][model_args.model_config],
         do_lower_case=PRETRAINED_INIT_CONFIGURATION[model_args.model_config][
@@ -182,17 +201,17 @@ def train():
         ],
         max_len=PRETRAINED_POSITIONAL_EMBEDDINGS_SIZES[model_args.model_config],
     )
-    
-    print(f'Provided Data Path: {data_args.data_path}'}
-    print(f'Provided Pickle File: {data_args.data_pickle}')
-    
+
+    print(f"Provided Data Path: {data_args.data_path}")
+    print(f"Provided Pickle File: {data_args.data_pickle}")
+
     # define datasets and data collator
     if data_args.data_pickle is None:
         print("Dataset not provided - manually generated from TSV files")
         train_dataset = SupervisedDataset(
             tokenizer=tokenizer,
             data_path=os.path.join(data_args.data_path, "train.tsv"),
-             kmer=data_args.kmer,
+            kmer=data_args.kmer,
         )
         val_dataset = SupervisedDataset(
             tokenizer=tokenizer,
@@ -206,7 +225,7 @@ def train():
         )
     else:
         print("Loading the Pickled Dataset")
-        with open(data_args.data_pickle, 'rb') as handle:
+        with open(data_args.data_pickle, "rb") as handle:
             dataset = pickle.load(handle)
         train_dataset = dataset["train"]
         val_dataset = dataset["val"]
@@ -242,16 +261,38 @@ def train():
         model.print_trainable_parameters()
 
     # define trainer
-    trainer = CustomTrainer(
-        model=model,
-        tokenizer=tokenizer,
-        args=training_args,
-        compute_metrics=compute_metrics,
-        train_dataset=train_dataset,
-        eval_dataset=val_dataset,
-        data_collator=data_collator,
+    if training_args.fp16 is True:
+        trainer = CustomTrainer(
+            model=model,
+            tokenizer=tokenizer,
+            args=training_args,
+            tf32=True,
+            compute_metrics=compute_metrics,
+            train_dataset=train_dataset,
+            eval_dataset=val_dataset,
+            data_collator=data_collator,
+        )
+    else:
+        trainer = CustomTrainer(
+            model=model,
+            tokenizer=tokenizer,
+            args=training_args,
+            compute_metrics=compute_metrics,
+            train_dataset=train_dataset,
+            eval_dataset=val_dataset,
+            data_collator=data_collator,
+        )
+
+    # Print GPU statistics.
+    device_name = "cuda" if torch.cuda.is_available() else "cpu"
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    print(
+        f"There are {torch.cuda.device_count()} {torch.cuda.get_device_name(0)}'s available."
     )
-    trainer.train()
+    print(f"Using {device_name} for training...")
+
+    result = trainer.train()
+    print_summary(result)
 
     if training_args.save_model:
         trainer.save_state()
