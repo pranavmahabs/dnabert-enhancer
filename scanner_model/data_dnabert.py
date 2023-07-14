@@ -97,7 +97,7 @@ class SupervisedDataset(Dataset):
             counts.append(np.count_nonzero(self.labels == label))
         top = max(counts)
         weights = [top / count for count in counts]
-        return torch.Tensor(weights)
+        return weights
 
 
 @dataclass

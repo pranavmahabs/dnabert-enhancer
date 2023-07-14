@@ -147,7 +147,7 @@ class DNATokenizer(PreTrainedTokenizer):
         # self.max_len_single_sentence = (
         #     self.max_len - 2
         # )  # take into account special tokens
-        # self.max_len_sentences_pair = (
+            #/ self.max_len_sentences_pair = (
         #     self.max_len - 3
         # )  # take into account special tokens
 
@@ -287,7 +287,7 @@ class DNATokenizer(PreTrainedTokenizer):
                 return (len(cls + token_ids_0 + sep) + 2 * (num_pieces - 1)) * [0]
         return len(cls + token_ids_0 + sep) * [0] + len(token_ids_1 + sep) * [1]
 
-    def save_vocabulary(self, vocab_path):
+    def save_vocabulary(self, vocab_path, filename_prefix):
         """Save the tokenizer vocabulary to a directory or file."""
         index = 0
         if os.path.isdir(vocab_path):

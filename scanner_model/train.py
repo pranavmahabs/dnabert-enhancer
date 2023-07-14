@@ -142,9 +142,8 @@ class CustomTrainer(transformers.Trainer):
         outputs = model(**inputs)
         logits = outputs.get("logits")
         # compute custom loss (using the global variable defined above)
-        loss_fct = torch.nn.CrossEntropyLoss(
-            weight=self.train_dataset.getweights(), device=model.device
-        )
+        weights = self.train_dataset.getweights()
+        loss_fct = torch.nn.CrossEntropyLoss(weight=torch.tensor(weights, device=model.device))
         loss = loss_fct(logits.view(-1, self.model.config.num_labels), labels.view(-1))
         return (loss, outputs) if return_outputs else loss
 
@@ -168,14 +167,14 @@ def calculate_metric_with_sklearn(logits: np.ndarray, labels: np.ndarray):
         "recall": sklearn.metrics.recall_score(
             labels, predictions, average="macro", zero_division=0
         ),
-        "AUC_score_0": sklearn.metrics.roc_auc_score(
+        "AUC_score_0": 
             ## Expects that labels are provided in a one-hot encoded format.
             sklearn.metrics.roc_auc_score((labels == 0), logits[:, 0])
-        ),
-        "AUC_score_2": sklearn.metrics.roc_auc_score(
+        ,
+        "AUC_score_2": 
             ## Expects that labels are provided in a one-hot encoded format.
             sklearn.metrics.roc_auc_score((labels == 2), logits[:, 2])
-        ),
+        ,
     }
 
 
@@ -194,6 +193,10 @@ def train():
         (ModelArguments, DataArguments, TrainingArguments)
     )
     model_args, data_args, training_args = parser.parse_args_into_dataclasses()
+    
+
+    print(f"Process Rank: {remaining_args.local-rank}, device: {training_args.device}.")
+    print(remaining_args.local-rank)
 
     tokenizer = DNATokenizer(
         vocab_file=PRETRAINED_VOCAB_FILES_MAP["vocab_file"][model_args.model_config],
@@ -261,7 +264,17 @@ def train():
         model = get_peft_model(model, lora_config)
         model.print_trainable_parameters()
 
-    # define trainer
+
+    # Configure Parallel Training and Trainer.
+    device_name = "cuda" if torch.cuda.is_available() else "cpu"
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    print(
+        f"There are {torch.cuda.device_count()} {torch.cuda.get_device_name(0)}'s available."
+    )
+    print(f"Using {device_name} for training...")
+
+    
+    model = model.to(device)
     trainer = CustomTrainer(
         model=model,
         tokenizer=tokenizer,
@@ -271,14 +284,9 @@ def train():
         eval_dataset=val_dataset,
         data_collator=data_collator,
     )
-
-    # Print GPU statistics.
-    device_name = "cuda" if torch.cuda.is_available() else "cpu"
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    print(
-        f"There are {torch.cuda.device_count()} {torch.cuda.get_device_name(0)}'s available."
-    )
-    print(f"Using {device_name} for training...")
+    if torch.cuda.device_count() > 1:
+        gpus = [torch.cuda.device(i) for i in range(torch.cuda.device_count())]
+        trainer.model_wrapped = torch.nn.DataParallel(model, gpus)
 
     result = trainer.train()
     print_summary(result)
