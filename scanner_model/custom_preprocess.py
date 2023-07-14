@@ -70,7 +70,7 @@ def create_dataset(param):
     """
     Generate the kmer-ized dataset in preparation of model training. 
     """
-    pos_bed_file, neg_bed_file, results_dir, fasta, K = param.pos_bed, param.neg_bed, param.fasta, param.K, param.res_dir
+    pos_bed_file, neg_bed_file, fasta, K, results_dir = param.pos_bed, param.neg_bed, param.fasta, param.k, param.res_dir
     
     # Load in the genome prior to building the dataset.
     chrom2seq = get_chrom2seq(fasta)
@@ -142,7 +142,7 @@ def create_dataset(param):
 
     # Concatenate the positive and negative datasets in preparation for final return
     train_data = pos_train_data + neg_train_data
-    print(pos_train_data.shape, neg_train_data.shape, train_data.shape)
+    # print(pos_train_data.shape, neg_train_data.shape, train_data.shape)
     train_label = pos_train_label + neg_train_label
     val_data = pos_val_data + neg_val_data
     val_label = pos_val_label + neg_val_label
@@ -152,7 +152,7 @@ def create_dataset(param):
     for data, label, filename in zip(
         [train_data, val_data, test_data],
         [train_label, val_label, test_label],
-        ["train.tsv", "val.tsv", "test.csv"]
+        ["train.tsv", "val.tsv", "test.tsv"]
     ):
         generate_tsv(data, label, results_dir + filename)
 
@@ -167,5 +167,5 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    param = ProcessInput(args.negative_file, args.positive_file, args.fast_file, args.k, args.results_folder)
+    param = ProcessInput(args.positive_file, args.negative_file, args.fast_file, args.k, args.results_folder)
     create_dataset(param)

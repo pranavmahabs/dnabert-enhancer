@@ -1,6 +1,7 @@
 DATA_PATH="/data/Dcode/pranav/genoscanner/data/"
 MODEL_PATH="/data/Dcode/pranav/genoscanner/scanner_model/pretrained_6mer/"
 OUTPATH="/data/Dcode/pranav/genoscanner/output/"
+PICKLE="/data/Dcode/pranav/genoscanner/scanner_model/supervised_dataset.p"
 
 # Command to be executed with the --accelerate or -a flag
 accelerate_command() {
@@ -9,13 +10,14 @@ accelerate_command() {
             --model_config "dna6" \
             --model_name_or_path $MODEL_PATH \
             --data_path  $DATA_PATH \
+            --data_pickle $PICKLE \
             --kmer 6 \
             --run_name dnabert-enhancer \
             --model_max_length 512 \
             --per_device_train_batch_size 32 \
             --per_device_eval_batch_size 32 \
             --gradient_accumulation_steps 1 \
-            --learning_rate ${lr} \
+            --learning_rate 2e-4 \
             --num_train_epochs 8 \
             --fp16 True \
             --save_steps 200 \
@@ -39,10 +41,11 @@ normal_command() {
             --model_name_or_path $MODEL_PATH \
             --data_path  $DATA_PATH \
             --kmer 6 \
+            --data_pickle $PICKLE \
             --run_name dnabert-enhancer \
             --model_max_length 512 \
-            --per_device_train_batch_size 32 \
-            --per_device_eval_batch_size 32 \
+            --per_device_train_batch_size 16 \
+            --per_device_eval_batch_size 16 \
             --gradient_accumulation_steps 1 \
             --learning_rate 2e-4 \
             --num_train_epochs 8 \

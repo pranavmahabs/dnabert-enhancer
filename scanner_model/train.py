@@ -57,8 +57,9 @@ class DataArguments:
     )
     kmer: int = field(
         default=-1,
-        metadata={"help": "k-mer for input sequence. Must be 3, 4, 5, or 6."},
+        metadata={"help": "k-mer for input sequence. Must be 3, 4, 5, or 6."}
     )
+    data_pickle: str = field(default=None, metadata={"help":"Pickle file that contains the T/T/V split."}
 
 
 @dataclass
@@ -166,6 +167,14 @@ def train():
     )
     model_args, data_args, training_args = parser.parse_args_into_dataclasses()
 
+    
+    device_name = 'cuda' if torch.cuda.is_available() else 'cpu'
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    print(f'There are {torch.cuda.device_count()} {torch.cuda.get_device_name(0)}\'s available.')
+    print(f'Using {device_name} for training...')
+    if torch.cuda.device_count() > 1:
+        model = nn.DataParallel()
+    
     tokenizer = DNATokenizer(
         vocab_file=PRETRAINED_VOCAB_FILES_MAP["vocab_file"][model_args.model_config],
         do_lower_case=PRETRAINED_INIT_CONFIGURATION[model_args.model_config][
@@ -173,23 +182,36 @@ def train():
         ],
         max_len=PRETRAINED_POSITIONAL_EMBEDDINGS_SIZES[model_args.model_config],
     )
-
+    
+    print(f'Provided Data Path: {data_args.data_path}'}
+    print(f'Provided Pickle File: {data_args.data_pickle}')
+    
     # define datasets and data collator
-    train_dataset = SupervisedDataset(
-        tokenizer=tokenizer,
-        data_path=os.path.join(data_args.data_path, "train.tsv"),
-        kmer=data_args.kmer,
-    )
-    val_dataset = SupervisedDataset(
-        tokenizer=tokenizer,
-        data_path=os.path.join(data_args.data_path, "val.tsv"),
-        kmer=data_args.kmer,
-    )
-    test_dataset = SupervisedDataset(
-        tokenizer=tokenizer,
-        data_path=os.path.join(data_args.data_path, "test.tsv"),
-        kmer=data_args.kmer,
-    )
+    if data_args.data_pickle is None:
+        print("Dataset not provided - manually generated from TSV files")
+        train_dataset = SupervisedDataset(
+            tokenizer=tokenizer,
+            data_path=os.path.join(data_args.data_path, "train.tsv"),
+             kmer=data_args.kmer,
+        )
+        val_dataset = SupervisedDataset(
+            tokenizer=tokenizer,
+            data_path=os.path.join(data_args.data_path, "val.tsv"),
+            kmer=data_args.kmer,
+        )
+        test_dataset = SupervisedDataset(
+            tokenizer=tokenizer,
+            data_path=os.path.join(data_args.data_path, "test.tsv"),
+            kmer=data_args.kmer,
+        )
+    else:
+        print("Loading the Pickled Dataset")
+        with open(data_args.data_pickle, 'rb') as handle:
+            dataset = pickle.load(handle)
+        train_dataset = dataset["train"]
+        val_dataset = dataset["val"]
+        test_dataset = dataset["test"]
+
     data_collator = DataCollatorForSupervisedDataset(tokenizer=tokenizer)
 
     id2label = {0: "Poised Enhancer", 1: "Noise", 2: "Active Enhancer"}
