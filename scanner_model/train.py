@@ -79,6 +79,7 @@ class TrainingArguments(transformers.TrainingArguments):
     per_device_eval_batch_size: int = field(default=1)
     num_train_epochs: int = field(default=1)
     fp16: bool = field(default=False)
+    tf32: bool = field(default=False)
     logging_steps: int = field(default=100)
     save_steps: int = field(default=100)
     eval_steps: int = field(default=100)
@@ -261,27 +262,15 @@ def train():
         model.print_trainable_parameters()
 
     # define trainer
-    if training_args.fp16 is True:
-        trainer = CustomTrainer(
-            model=model,
-            tokenizer=tokenizer,
-            args=training_args,
-            tf32=True,
-            compute_metrics=compute_metrics,
-            train_dataset=train_dataset,
-            eval_dataset=val_dataset,
-            data_collator=data_collator,
-        )
-    else:
-        trainer = CustomTrainer(
-            model=model,
-            tokenizer=tokenizer,
-            args=training_args,
-            compute_metrics=compute_metrics,
-            train_dataset=train_dataset,
-            eval_dataset=val_dataset,
-            data_collator=data_collator,
-        )
+    trainer = CustomTrainer(
+        model=model,
+        tokenizer=tokenizer,
+        args=training_args,
+        compute_metrics=compute_metrics,
+        train_dataset=train_dataset,
+        eval_dataset=val_dataset,
+        data_collator=data_collator,
+    )
 
     # Print GPU statistics.
     device_name = "cuda" if torch.cuda.is_available() else "cpu"

@@ -50,6 +50,7 @@ normal_command() {
             --learning_rate 2e-4 \
             --num_train_epochs 8 \
             --fp16 True \
+            --tf32 True \
             --save_steps 200 \
             --output_dir $OUTPATH \
             --evaluation_strategy steps \
