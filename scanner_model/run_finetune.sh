@@ -1,3 +1,9 @@
+#!/bin/bash
+
+#SBATCH -o myjob.out
+#SBATCH -e myjob.err
+
+
 DATA_PATH="/data/Dcode/pranav/genoscanner/data/"
 MODEL_PATH="/data/Dcode/pranav/genoscanner/scanner_model/pretrained_6mer/"
 OUTPATH="/data/Dcode/pranav/genoscanner/output/"
@@ -36,7 +42,8 @@ accelerate_command() {
 normal_command() {
     echo "Running normal command."
     # Add your normal command here
-    python3 train.py \
+    LOCAL_RANK=0,1,2,3 CUDA_VISIBLE_DEVICE=0,1,2,3 \
+    python -m torch.distributed.launch --nproc_per_node 4 --use-env train.py \
             --model_config "dna6" \
             --model_name_or_path $MODEL_PATH \
             --data_path  $DATA_PATH \
@@ -44,18 +51,19 @@ normal_command() {
             --data_pickle $PICKLE \
             --run_name dnabert-enhancer \
             --model_max_length 512 \
+            --use_lora \
+            --lora_target_modules 'query,value,key,dense' \
             --per_device_train_batch_size 16 \
             --per_device_eval_batch_size 16 \
-            --gradient_accumulation_steps 1 \
+            --gradient_accumulation_steps 2 \
             --learning_rate 2e-4 \
             --num_train_epochs 8 \
             --fp16 True \
-            --tf32 True \
-            --save_steps 200 \
+            --save_steps 10000 \
             --output_dir $OUTPATH \
             --evaluation_strategy steps \
             --eval_steps 200 \
-            --warmup_steps 50 \
+            --warmup_steps 200 \
             --logging_steps 100000 \
             --overwrite_output_dir True \
             --log_level info \

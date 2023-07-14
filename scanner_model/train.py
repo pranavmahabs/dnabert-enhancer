@@ -115,6 +115,15 @@ def print_summary(result):
     print(f"Samples/Second: {result.metrics['train_samples_per_second']:.2f}")
     print_gpu_utilization()
 
+def setup(rank, world_size):
+    os.environ["MASTER_ADDR"] = 'localhost'
+    os.environ["MASTER_PORT"] = "12345"
+
+    torch.distributed.init_process_group("gloo", rank=rank, world_size=world_size)
+
+def cleanup():
+    torch.distributed.destroy_process_group()
+
 
 """
 Functionality to SAVE the model/trainer. 
@@ -143,7 +152,9 @@ class CustomTrainer(transformers.Trainer):
         logits = outputs.get("logits")
         # compute custom loss (using the global variable defined above)
         weights = self.train_dataset.getweights()
-        loss_fct = torch.nn.CrossEntropyLoss(weight=torch.tensor(weights, device=model.device))
+        rank = os.environ['LOCAL_RANK']
+        this_device = torch.device(int(rank))
+        loss_fct = torch.nn.CrossEntropyLoss(weight=torch.tensor(weights, device=this_device))
         loss = loss_fct(logits.view(-1, self.model.config.num_labels), labels.view(-1))
         return (loss, outputs) if return_outputs else loss
 
@@ -194,10 +205,8 @@ def train():
     )
     model_args, data_args, training_args = parser.parse_args_into_dataclasses()
     
-
-    print(f"Process Rank: {remaining_args.local-rank}, device: {training_args.device}.")
-    print(remaining_args.local-rank)
-
+    #setup(rank, world_size)
+    
     tokenizer = DNATokenizer(
         vocab_file=PRETRAINED_VOCAB_FILES_MAP["vocab_file"][model_args.model_config],
         do_lower_case=PRETRAINED_INIT_CONFIGURATION[model_args.model_config][
@@ -274,7 +283,6 @@ def train():
     print(f"Using {device_name} for training...")
 
     
-    model = model.to(device)
     trainer = CustomTrainer(
         model=model,
         tokenizer=tokenizer,
@@ -284,9 +292,6 @@ def train():
         eval_dataset=val_dataset,
         data_collator=data_collator,
     )
-    if torch.cuda.device_count() > 1:
-        gpus = [torch.cuda.device(i) for i in range(torch.cuda.device_count())]
-        trainer.model_wrapped = torch.nn.DataParallel(model, gpus)
 
     result = trainer.train()
     print_summary(result)
@@ -306,7 +311,10 @@ def train():
         os.makedirs(results_path, exist_ok=True)
         with open(os.path.join(results_path, "eval_results.json"), "w") as f:
             json.dump(results, f)
-
+    
+    cleanup()
 
 if __name__ == "__main__":
-    train()
+   
+   
+   train()
