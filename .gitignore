@@ -8,3 +8,4 @@ scanner_model/pretrained_6mer/pytorch_model.bin
 data/test.tsv
 data/train.tsv
 data/val.tsv
+scanner_model/model_src/__pycache__

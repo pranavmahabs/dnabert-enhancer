@@ -3,31 +3,26 @@
 #SBATCH -o myjob.out
 #SBATCH -e myjob.err
 
+LABELJSON="labels.json"
+MODEL_PATH="pretrained_6mer/"
 
-DATA_PATH="/data/Dcode/pranav/genoscanner/data/"
-MODEL_PATH="/data/Dcode/pranav/genoscanner/scanner_model/pretrained_6mer/"
-OUTPATH="/data/Dcode/pranav/genoscanner/output/"
-PICKLE="/data/Dcode/pranav/genoscanner/scanner_model/supervised_dataset.p"
-
-if [ $# -eq 0 ]; then
-    echo "Error: Number of available GPUs not provided."
-    echo "Usage: $0 <number of GPUs>"
-    exit 1
-fi
-
-NUM_GPUS=$1
+DATA_PATH="../data/"
+OUTPATH="../output/"
+PICKLE="../supervised_dataset.p"
+NUM_GPUS=4
 
 # Command to be executed with the --normal flag
     # Add your normal command here
 source myconda
 mamba activate learning
 LOCAL_RANK=$(seq 0 $((NUM_GPUS - 1))) CUDA_VISIBLE_DEVICE=$(seq 0 $((NUM_GPUS - 1))) \
-torchrun --nproc_per_node 4 train.py \
+torchrun --nproc_per_node $NUM_GPUS model_src/train.py \
         --model_config "dna6" \
         --model_name_or_path $MODEL_PATH \
         --data_path  $DATA_PATH \
         --kmer 6 \
         --data_pickle $PICKLE \
+        --label_json $LABELJSON \
         --run_name dnabert-enhancer \
         --model_max_length 512 \
         --use_lora \
