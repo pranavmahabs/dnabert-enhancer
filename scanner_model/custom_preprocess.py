@@ -3,7 +3,7 @@ import numpy as np
 import sys
 from Bio import SeqIO
 from pybedtools import BedTool
-from motif_utils import seq2kmer
+from attention_analysis.motif_utils import seq2kmer
 
 import argparse
 from dataclasses import dataclass
@@ -227,8 +227,9 @@ if __name__ == "__main__":
 
     if args.single_bed_file:
         param = SingleInput(
-            args.single_bed_file, args.fast_file, args.k, args.result_folder
+            args.single_bed_file, args.fast_file, args.k, args.results_folder
         )
+        create_single_tsv(param)
 
     else:
         param = ProcessInput(

@@ -144,7 +144,7 @@ def pickle_single(config, file_base):
         do_lower_case=PRETRAINED_INIT_CONFIGURATION[config]["do_lower_case"],
         max_len=PRETRAINED_POSITIONAL_EMBEDDINGS_SIZES[config],
     )
-    outfile = "positive.p"
+    outfile = file_base + "positive.p"
     tsv_file = file_base + "positive.tsv"
     dataset = SupervisedDataset(tsv_file, tokenizer)
     to_dump = {"positive": dataset}

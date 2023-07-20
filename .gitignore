@@ -2,9 +2,12 @@ scanner_model/__pycache__
 scanner_model/.ipynb_checkpoints/
 scanner_model/model_src/__pycache__
 scanner_model/pretrained_6mer/pytorch_model.bin
+scanner_model/attention_analysis/__pycache__
 
 data/best_model_params.pt
 data/full_data_tsv
 data/balanced_data
 data/test.tsv
 data/val.tsv
+data/positive.p
+data/positive.tsv
