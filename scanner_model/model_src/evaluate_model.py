@@ -178,7 +178,6 @@ def evaluate():
         max_len=PRETRAINED_POSITIONAL_EMBEDDINGS_SIZES[model_args.model_config],
     )
 
-    print(f"Provided Data Path: {data_args.data_path}")
     print(f"Provided Pickle File: {data_args.data_pickle}")
 
     print("Loading the Pickled Dataset")
