@@ -5,7 +5,6 @@ import json
 import logging
 import collections
 from dataclasses import dataclass, field
-from evaluate import evaluator
 from typing import Optional
 
 import torch
@@ -33,12 +32,21 @@ class ModelArguments:
     model_config: str = field(
         default="dna6", metadata={"help": "Choose dna3, dna4, dna5, or dna6"}
     )
-    dnabert_path: Optional[str] = field(default="facebook/opt-125m")
-    peft_model_path: Optional[str] = field(default="facebook/opt-125m")
+    pretrained_dnabert: Optional[str] = field(
+        default="facebook/opt-125m",
+        metadata={"help": "Dir that has Pretrained DNABERT."},
+    )
+    peft_path: Optional[str] = field(
+        default="facebook/opt-125m",
+        metadata={"help": "Dir that has Finetuned PEFT DNABERT."},
+    )
     label_json: str = field(
         default=None, metadata={"help": "Json with Label2Id config."}
     )
-    out_dir: Optional[str] = field(default="evaluation_output")
+    out_dir: Optional[str] = field(
+        default="evaluation_output",
+        metadata={"help": "Where you want results to be saved."},
+    )
 
 
 @dataclass
@@ -160,9 +168,7 @@ def evaluate():
     parser = transformers.HfArgumentParser(
         (ModelArguments, DataArguments, TrainingArguments)
     )
-    (model_args, data_args, train_args), remaining = parser.parse_args_into_dataclasses(
-        return_remaining_strings=True
-    )
+    model_args, data_args, train_args = parser.parse_args_into_dataclasses()
     print(model_args, data_args, train_args, remaining)
 
     tokenizer = DNATokenizer(
@@ -224,9 +230,9 @@ def evaluate():
     eval_logits = eval_results.logits.detach().numpy()
     all_scores = process_multi_score(eval_attens, data_args.kmer)
 
-    np.save(os.path.join(model_args.out_dir, "atten.npy"), atten_scores)
-    np.save(os.path.join(model_args.out_dir, "pred_results.npy"), eval_logits)
-    np.save(os.path.join(model_args.out_dir, "heads_atten.npy"), all_scores)
+    np.save(os.path.join(train_args.output_dir, "atten.npy"), atten_scores)
+    np.save(os.path.join(train_args.output_dir, "pred_results.npy"), eval_logits)
+    np.save(os.path.join(train_args.output_dir, "heads_atten.npy"), all_scores)
 
     os.makedirs(train_args.output_dir, exist_ok=True)
     with open(os.path.join(train_args.output_dir, "eval_results.json"), "w") as f:

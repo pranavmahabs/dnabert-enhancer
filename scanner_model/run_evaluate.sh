@@ -20,9 +20,8 @@ LOCAL_RANK=$(seq 0 $((NUM_GPUS - 1))) CUDA_VISIBLE_DEVICE=$(seq 0 $((NUM_GPUS - 
 torchrun --nproc_per_node $NUM_GPUS model_src/train.py \
         --model_config "dna6" \
         --dnabert_path $MODEL_PATH \
-        --peft_model_path $PEFT_PATH \
+        --peft_path $PEFT_PATH \
         --label_json $LABELJSON \
-        --out_dir $OUTPATH \
         --data_path  $DATA_PATH \
         --kmer 6 \
         --data_pickle $PICKLE \
