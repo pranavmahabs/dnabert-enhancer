@@ -32,7 +32,7 @@ class ModelArguments:
     model_config: str = field(
         default="dna6", metadata={"help": "Choose dna3, dna4, dna5, or dna6"}
     )
-    pretrained_dnabert: Optional[str] = field(
+    dnabert_path: Optional[str] = field(
         default="facebook/opt-125m",
         metadata={"help": "Dir that has Pretrained DNABERT."},
     )
@@ -169,7 +169,6 @@ def evaluate():
         (ModelArguments, DataArguments, TrainingArguments)
     )
     model_args, data_args, train_args = parser.parse_args_into_dataclasses()
-    print(model_args, data_args, train_args, remaining)
 
     tokenizer = DNATokenizer(
         vocab_file=PRETRAINED_VOCAB_FILES_MAP["vocab_file"][model_args.model_config],
