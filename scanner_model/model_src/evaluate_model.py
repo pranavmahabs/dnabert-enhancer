@@ -33,12 +33,12 @@ class ModelArguments:
     model_config: str = field(
         default="dna6", metadata={"help": "Choose dna3, dna4, dna5, or dna6"}
     )
-    dnabert_path: str = field(default="facebook/opt-125m")
-    peft_model_path: str = field(default="facebook/opt-125m")
+    dnabert_path: Optional[str] = field(default="facebook/opt-125m")
+    peft_model_path: Optional[str] = field(default="facebook/opt-125m")
     label_json: str = field(
         default=None, metadata={"help": "Json with Label2Id config."}
     )
-    out_dir: str = field(default="evaluation_output")
+    out_dir: Optional[str] = field(default="evaluation_output")
 
 
 @dataclass
@@ -56,7 +56,6 @@ class DataArguments:
 class TrainingArguments(transformers.TrainingArguments):
     cache_dir: Optional[str] = field(default=None)
     run_name: str = field(default="run")
-    optim: str = field(default="adamw_torch")
     model_max_length: int = field(
         default=512, metadata={"help": "Maximum sequence length."}
     )

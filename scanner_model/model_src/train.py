@@ -210,8 +210,6 @@ def train():
     )
     model_args, data_args, training_args = parser.parse_args_into_dataclasses()
 
-    # setup(rank, world_size)
-
     tokenizer = DNATokenizer(
         vocab_file=PRETRAINED_VOCAB_FILES_MAP["vocab_file"][model_args.model_config],
         do_lower_case=PRETRAINED_INIT_CONFIGURATION[model_args.model_config][
