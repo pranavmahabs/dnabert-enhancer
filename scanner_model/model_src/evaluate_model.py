@@ -207,8 +207,8 @@ def evaluate():
         output_attentions=True,
     )
 
-    config = PeftConfig.from_pretrained(model_args.peft_model_path)
-    inference_model = PeftModel.from_pretrained(model, model_args.peft_model_path)
+    config = PeftConfig.from_pretrained(model_args.peft_path)
+    inference_model = PeftModel.from_pretrained(model, model_args.peft_path)
 
     data_collator = DataCollatorForSupervisedDataset(tokenizer=tokenizer)
 
