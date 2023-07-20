@@ -1,5 +1,3 @@
-## DNABERT-2/DNABERT Implementation Helped with this Code.
-
 import os
 import csv
 import copy
@@ -120,6 +118,45 @@ def process_scores(attention_scores, kmer):
     return scores
 
 
+def process_multi_score(attention_scores, kmer):
+    scores = np.zeros(
+        [
+            attention_scores.shape[0],
+            attention_scores.shape[1],
+            attention_scores.shape[-1],
+        ]
+    )
+
+    # attention_scores: (batch_size, num_heads, seq_len, seq_len)
+    for index, attention_score in enumerate(attention_scores):
+        head_scores = np.zeros([attention_scores.shape[1], attention_scores.shape[-1]])
+        for head in range(0, len(attention_score)):
+            attn_score = []
+
+            for i in range(1, attention_score.shape[-1] - kmer + 2):
+                attn_score.append(float(attention_score[head, 0, i]))
+
+            for i in range(len(attn_score) - 1):
+                if attn_score[i + 1] == 0:
+                    attn_score[i] = 0
+                    break
+
+            counts = np.zeros([len(attn_score) + kmer - 1])
+            real_scores = np.zeros([len(attn_score) + kmer - 1])
+
+            for i, score in enumerate(attn_score):
+                for j in range(kmer):
+                    counts[i + j] += 1.0
+                    real_scores[i + j] += score
+            real_scores = real_scores / counts
+            real_scores = real_scores / np.linalg.norm(real_scores)
+
+            head_scores[head] = real_scores
+
+        scores[index] = head_scores
+    return scores
+
+
 def evaluate():
     parser = transformers.HfArgumentParser(
         (ModelArguments, DataArguments, TrainingArguments)
@@ -140,11 +177,8 @@ def evaluate():
     print("Loading the Pickled Dataset")
     with open(data_args.data_pickle, "rb") as handle:
         dataset = pickle.load(handle)
-    train_dataset = dataset["train"]
-    val_dataset = dataset["val"]
-    test_dataset = dataset["test"]
 
-    # complete_dataset = ?
+    complete_dataset = dataset["positive"]
 
     data_collator = DataCollatorForSupervisedDataset(tokenizer=tokenizer)
 
@@ -178,7 +212,6 @@ def evaluate():
         do_train=False,
         do_predict=True,
         tokenizer=tokenizer,
-        eval_dataset=val_dataset,
         data_collator=data_collator,
         dataloader_drop_last=False,
     )
@@ -187,6 +220,12 @@ def evaluate():
     eval_attens = (eval_results.attentions[-1]).numpy()
     atten_scores = process_scores(eval_attens, data_args.kmer)
     eval_logits = eval_results.logits.detach().numpy()
+    all_scores = process_multi_score(eval_attens, data_args.kmer)
 
     np.save(os.path.join(model_args.out_dir, "atten.npy"), atten_scores)
     np.save(os.path.join(model_args.out_dir, "pred_results.npy"), eval_logits)
+    np.save(os.path.join(model_args.out_dir, "heads_atten.npy"), all_scores)
+
+    os.makedirs(train_args.output_dir, exist_ok=True)
+    with open(os.path.join(train_args.output_dir, "eval_results.json"), "w") as f:
+        json.dump(eval_results, f)

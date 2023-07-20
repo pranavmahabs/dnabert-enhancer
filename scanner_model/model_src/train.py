@@ -319,12 +319,11 @@ def train():
 
     # get the evaluation results from trainer
     if training_args.eval_and_save_results:
-        results_path = os.path.join(
-            training_args.output_dir, "results", training_args.run_name
-        )
         results = trainer.evaluate(eval_dataset=test_dataset)
-        os.makedirs(results_path, exist_ok=True)
-        with open(os.path.join(results_path, "eval_results.json"), "w") as f:
+        os.makedirs(training_args.output_dir, exist_ok=True)
+        with open(
+            os.path.join(training_args.output_dir, "eval_results.json"), "w"
+        ) as f:
             json.dump(results, f)
 
     cleanup()
