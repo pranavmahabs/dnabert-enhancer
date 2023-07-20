@@ -236,3 +236,7 @@ def evaluate():
     os.makedirs(train_args.output_dir, exist_ok=True)
     with open(os.path.join(train_args.output_dir, "eval_results.json"), "w") as f:
         json.dump(eval_results, f)
+
+
+if __name__ == "__main__":
+    evaluate()
