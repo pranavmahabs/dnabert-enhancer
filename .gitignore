@@ -1,11 +1,8 @@
 data/best_model_params.pt
-data/data.p
 scanner_model/__pycache__
-dnabert_model/apex
 simple_model/__pycache__
 scanner_model/.ipynb_checkpoints/
 scanner_model/pretrained_6mer/pytorch_model.bin
-data/test.tsv
-data/train.tsv
-data/val.tsv
+data/full_data_tsv
+data/balanced_data
 scanner_model/model_src/__pycache__

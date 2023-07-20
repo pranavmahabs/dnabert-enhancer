@@ -11,7 +11,7 @@ import sklearn
 import numpy as np
 from torch.utils.data import Dataset
 
-from model_src.tokenizer import (
+from tokenizer import (
     DNATokenizer,
     PRETRAINED_INIT_CONFIGURATION,
     PRETRAINED_VOCAB_FILES_MAP,
@@ -121,13 +121,14 @@ class DataCollatorForSupervisedDataset(object):
         )
 
 
-def pickle_dataset(tsv_files, config):
+def pickle_dataset(config, file_base):
     tokenizer = DNATokenizer(
         vocab_file=PRETRAINED_VOCAB_FILES_MAP["vocab_file"][config],
         do_lower_case=PRETRAINED_INIT_CONFIGURATION[config]["do_lower_case"],
         max_len=PRETRAINED_POSITIONAL_EMBEDDINGS_SIZES[config],
     )
-    outfile = "supervised_dataset.p"
+    outfile = file_base + "supervised_dataset.p"
+    tsv_files = [file_base + "val.tsv", file_base + "train.tsv", file_base + "test.tsv"]
     to_dump = {}
     for tsv_file, name in zip(tsv_files, ["val", "train", "test"]):
         dataset = SupervisedDataset(tsv_file, tokenizer)
@@ -138,7 +139,6 @@ def pickle_dataset(tsv_files, config):
 
 
 if __name__ == "__main__":
-    file_base = "/data/Dcode/pranav/genoscanner/data/"
-    files = [file_base + "val.tsv", file_base + "train.tsv", file_base + "test.tsv"]
+    file_base = "../data/balanced_data/"
     config = "dna6"
-    pickle_dataset(files, config)
+    pickle_dataset(config, file_base)

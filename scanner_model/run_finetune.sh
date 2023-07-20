@@ -6,9 +6,9 @@
 LABELJSON="labels.json"
 MODEL_PATH="pretrained_6mer/"
 
-DATA_PATH="../data/"
-OUTPATH="../output/"
-PICKLE="../supervised_dataset.p"
+DATA_PATH="../data/balanced_data/"
+OUTPATH="../output/semi-balanced/"
+PICKLE="../data/balanced_data/supervised_dataset.p"
 NUM_GPUS=4
 
 # Command to be executed with the --normal flag
@@ -29,14 +29,14 @@ torchrun --nproc_per_node $NUM_GPUS model_src/train.py \
         --lora_target_modules 'query,value,key,dense' \
         --per_device_train_batch_size 16 \
         --per_device_eval_batch_size 16 \
-        --gradient_accumulation_steps 2 \
+        --gradient_accumulation_steps 1 \
         --learning_rate 2e-4 \
-        --num_train_epochs 15 \
+        --num_train_epochs 10 \
         --fp16 True \
-        --save_steps 400 \
+        --save_steps 100 \
         --output_dir $OUTPATH \
         --evaluation_strategy steps \
-        --eval_steps 400 \
+        --eval_steps 100 \
         --warmup_steps 200 \
         --logging_steps 100000 \
         --overwrite_output_dir True \

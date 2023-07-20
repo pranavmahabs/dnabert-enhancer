@@ -20,8 +20,8 @@ from torch.utils.data import Dataset
 
 from peft import PeftConfig, PeftModel
 
-from model_src.data_dnabert import SupervisedDataset, DataCollatorForSupervisedDataset
-from model_src.tokenizer import (
+from data_dnabert import SupervisedDataset, DataCollatorForSupervisedDataset
+from tokenizer import (
     DNATokenizer,
     PRETRAINED_INIT_CONFIGURATION,
     PRETRAINED_VOCAB_FILES_MAP,
