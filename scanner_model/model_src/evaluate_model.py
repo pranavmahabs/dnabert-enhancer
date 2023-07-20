@@ -160,7 +160,10 @@ def evaluate():
     parser = transformers.HfArgumentParser(
         (ModelArguments, DataArguments, TrainingArguments)
     )
-    model_args, data_args, train_args = parser.parse_args_into_dataclasses()
+    model_args, data_args, train_args = parser.parse_args_into_dataclasses(
+        return_remaining_strings=True
+    )
+    print(model_args, data_args, train_args)
 
     tokenizer = DNATokenizer(
         vocab_file=PRETRAINED_VOCAB_FILES_MAP["vocab_file"][model_args.model_config],
