@@ -22,7 +22,6 @@ torchrun --nproc_per_node $NUM_GPUS model_src/evaluate_model.py \
         --dnabert_path $MODEL_PATH \
         --peft_path $PEFT_PATH \
         --label_json $LABELJSON \
-        --data_path  $DATA_PATH \
         --kmer 6 \
         --data_pickle $PICKLE \
         --run_name dnabert-enhancer \
@@ -31,5 +30,4 @@ torchrun --nproc_per_node $NUM_GPUS model_src/evaluate_model.py \
         --output_dir $OUTPATH \
         --overwrite_output_dir True \
         --log_level info \
-        --find_unused_parameters False \
 
