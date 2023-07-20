@@ -8,6 +8,7 @@ from motif_utils import seq2kmer
 import argparse
 from dataclasses import dataclass
 
+
 @dataclass
 class ProcessInput:
     pos_bed: str
@@ -15,6 +16,15 @@ class ProcessInput:
     fasta: str
     k: int
     res_dir: str
+
+
+@dataclass
+class SingleInput:
+    bed: str
+    fasta: str
+    k: int
+    res_dir: str
+
 
 train_chromosomes = [
     "chr1",
@@ -62,16 +72,22 @@ def generate_tsv(sequences, labels, tsv_filename):
     for sequence, label in zip(sequences, labels):
         tsv_content += f"{sequence}\t{label}\n"
 
-    with open(tsv_filename, 'w') as tsv_file:
+    with open(tsv_filename, "w") as tsv_file:
         tsv_file.write(tsv_content)
 
 
-def create_dataset(param):
+def create_dataset(param: ProcessInput):
     """
-    Generate the kmer-ized dataset in preparation of model training. 
+    Generate the kmer-ized dataset in preparation of model training.
     """
-    pos_bed_file, neg_bed_file, fasta, K, results_dir = param.pos_bed, param.neg_bed, param.fasta, param.k, param.res_dir
-    
+    pos_bed_file, neg_bed_file, fasta, K, results_dir = (
+        param.pos_bed,
+        param.neg_bed,
+        param.fasta,
+        param.k,
+        param.res_dir,
+    )
+
     # Load in the genome prior to building the dataset.
     chrom2seq = get_chrom2seq(fasta)
 
@@ -99,7 +115,7 @@ def create_dataset(param):
     ):
         for r in bed_list:
             # Maximum sequence length of 512
-            _seq = chrom2seq[r.chrom][r.start + 250: r.stop - 251]
+            _seq = chrom2seq[r.chrom][r.start + 250 : r.stop - 251]
             kmerized = seq2kmer(str(_seq), K)
             data_list.append(kmerized)
             # Insert the Label into the Approriate List
@@ -128,7 +144,7 @@ def create_dataset(param):
         [neg_train_data, neg_val_data, neg_test_data],
     ):
         for r in bed_list:
-            _seq = chrom2seq[r.chrom][r.start + 250: r.stop - 251]
+            _seq = chrom2seq[r.chrom][r.start + 250 : r.stop - 251]
             kmerized = seq2kmer(str(_seq), 6)
             data_list.append(kmerized)
 
@@ -152,20 +168,74 @@ def create_dataset(param):
     for data, label, filename in zip(
         [train_data, val_data, test_data],
         [train_label, val_label, test_label],
-        ["train.tsv", "val.tsv", "test.tsv"]
+        ["train.tsv", "val.tsv", "test.tsv"],
     ):
         generate_tsv(data, label, results_dir + filename)
 
 
+def create_single_tsv(param: SingleInput):
+    bed_file, fasta, K, results_dir = (
+        param.bed,
+        param.fasta,
+        param.k,
+        param.res_dir,
+    )
+
+    # Load in the genome prior to building the dataset.
+    chrom2seq = get_chrom2seq(fasta)
+
+    beds = list(BedTool(bed_file))
+    data_list = []
+    label_list = []
+
+    for r in beds:
+        # Maximum sequence length of 512
+        _seq = chrom2seq[r.chrom][r.start + 250 : r.stop - 251]
+        kmerized = seq2kmer(str(_seq), K)
+        data_list.append(kmerized)
+        # Insert the Label into the Approriate List
+        # 1:AE - Enhancers with H3K27AC; -1:PE, Enhancers only with H3K4me1
+        _k = int(r[3]) - int(r[4])
+        if _k == 0:
+            _k = 1
+        label_list.append(_k)
+
+    generate_tsv(data_list, label_list, "positive.tsv")
+
+
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description='Process input files.')
-    parser.add_argument('--negative-file', required=True, help='Path to the negative file')
-    parser.add_argument('--positive-file', required=True, help='Path to the positive file')
-    parser.add_argument('--fast-file', required=True, help='Path to the fast file')
-    parser.add_argument('--k', type=int, required=True, help='Value for K')
-    parser.add_argument('--results-folder', required=True, help='Path to the results folder')
+    parser = argparse.ArgumentParser(description="Process input files.")
+    parser.add_argument(
+        "--negative-file", required=False, help="Path to the negative file"
+    )
+    parser.add_argument(
+        "--positive-file", required=False, help="Path to the positive file"
+    )
+    parser.add_argument("--fast-file", required=True, help="Path to the fast file")
+    parser.add_argument("--k", type=int, required=True, help="Value for K")
+    parser.add_argument(
+        "--results-folder", required=True, help="Path to the results folder"
+    )
+    parser.add_argument(
+        "--generate-single_tsv",
+        required=False,
+        help="If you only want to convert ONE BED file to a TSV.",
+    )
+    parser.add_argument("--single-bed-file", required=False)
 
     args = parser.parse_args()
 
-    param = ProcessInput(args.positive_file, args.negative_file, args.fast_file, args.k, args.results_folder)
-    create_dataset(param)
+    if args.single_bed_file:
+        param = SingleInput(
+            args.single_bed_file, args.fast_file, args.k, args.result_folder
+        )
+
+    else:
+        param = ProcessInput(
+            args.positive_file,
+            args.negative_file,
+            args.fast_file,
+            args.k,
+            args.results_folder,
+        )
+        create_dataset(param)
