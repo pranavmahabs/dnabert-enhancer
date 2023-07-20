@@ -138,7 +138,23 @@ def pickle_dataset(config, file_base):
         pickle.dump(to_dump, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
 
+def pickle_single(config, file_base):
+    tokenizer = DNATokenizer(
+        vocab_file=PRETRAINED_VOCAB_FILES_MAP["vocab_file"][config],
+        do_lower_case=PRETRAINED_INIT_CONFIGURATION[config]["do_lower_case"],
+        max_len=PRETRAINED_POSITIONAL_EMBEDDINGS_SIZES[config],
+    )
+    outfile = "positive.p"
+    tsv_file = file_base + "positive.tsv"
+    dataset = SupervisedDataset(tsv_file, tokenizer)
+    to_dump = {"positive": dataset}
+
+    with open(outfile, "wb") as handle:
+        pickle.dump(to_dump, handle, protocol=pickle.HIGHEST_PROTOCOL)
+
+
 if __name__ == "__main__":
-    file_base = "../data/balanced_data/"
+    file_base = "../data/"
     config = "dna6"
-    pickle_dataset(config, file_base)
+    # pickle_dataset(config, file_base)
+    pickle_single(config, file_base)
