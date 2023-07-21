@@ -1,9 +1,5 @@
 import os
-import csv
-import copy
 import json
-import logging
-import collections
 from dataclasses import dataclass, field
 from typing import Optional
 
@@ -13,7 +9,8 @@ from pynvml import *
 import transformers
 import sklearn
 import numpy as np
-from torch.utils.data import Dataset
+from torch.utils.data import SequentialSampler, DataLoader
+from tqdm import tqdm, trange
 
 from peft import PeftConfig, PeftModel
 
@@ -220,21 +217,60 @@ def evaluate():
         data_collator=data_collator,
     )
 
-    eval_results = trainer.predict(test_dataset=complete_dataset)
-    eval_attens = (eval_results.attentions[-1]).numpy()
-    atten_scores = process_scores(eval_attens, data_args.kmer)
-    eval_logits = eval_results.logits.detach().numpy()
-    all_scores = process_multi_score(eval_attens, data_args.kmer)
-
-    np.save(os.path.join(train_args.output_dir, "atten.npy"), atten_scores)
-    np.save(os.path.join(train_args.output_dir, "pred_results.npy"), eval_logits)
-    np.save(os.path.join(train_args.output_dir, "heads_atten.npy"), all_scores)
-
-    eval_metrics = trainer.evaluate(eval_dataset=complete_dataset)
-
+    eval_metrics = trainer.evaluate(test_dataset=complete_dataset)
     os.makedirs(train_args.output_dir, exist_ok=True)
     with open(os.path.join(train_args.output_dir, "eval_results.json"), "w") as f:
-        json.dump(eval_results, f)
+        json.dump(eval_metrics, f)
+
+    batch_size = train_args.per_device_eval_batch_size
+    pred_sampler = SequentialSampler(complete_dataset)
+    pred_loader = DataLoader(
+        dataset=complete_dataset,
+        batch_size=batch_size,
+        batch_sampler=pred_sampler,
+        shuffle=False,
+        collate_fn=data_collator,
+    )
+
+    device_name = "cuda" if torch.cuda.is_available() else "cpu"
+    if device_name is "cuda" and torch.cuda.device_count() > 1:
+        inference_model = torch.nn.DataParallel(inference_model)
+
+    score_len = len(complete_dataset.input_ids[0]) - data_args.kmer + 2  # should be 496
+    assert score_len == 496
+    single_attentions = np.zeros((len(complete_dataset), score_len))
+    pred_results = np.zeros((len(complete_dataset), num_labels))
+    multi_attentions = np.zeros((len(complete_dataset), 12, score_len))
+
+    for index, batch in enumerate(tqdm(pred_loader, desc="Predicting")):
+        inference_model.eval()
+
+        with torch.no_grad():
+            input_ids, masks = batch["input_ids"], batch["attention_mask"]
+            labels = batch["labels"]
+
+            outputs = inference_model(input_ids, masks)
+
+            # Save Attention Scores #
+            out_attns = (outputs.attentions[-1]).cpu().numpy()
+            single_attn = process_scores(out_attns, data_args.kmer)
+            multi_attn = process_multi_score(out_attns, data_args.kmer)
+            single_attentions[
+                index * batch_size : index * batch_size + len(input_ids), :
+            ] = single_attn
+            multi_attentions[
+                index * batch_size : index * batch_size + len(input_ids), :, :
+            ] = multi_attn
+
+            # Save Logits #
+            out_logits = outputs.logits.detach().numpy()
+            pred_results[
+                index * batch_size : index * batch_size + len(input_ids), :
+            ] = out_logits
+
+    np.save(os.path.join(train_args.output_dir, "atten.npy"), single_attentions)
+    np.save(os.path.join(train_args.output_dir, "pred_results.npy"), pred_results)
+    np.save(os.path.join(train_args.output_dir, "heads_atten.npy"), multi_attentions)
 
 
 if __name__ == "__main__":
