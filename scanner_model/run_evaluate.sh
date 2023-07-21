@@ -10,12 +10,14 @@ PEFT_PATH="../output/best_berten_718/"
 DATA_PATH="../data/"
 OUTPATH="../output/positive_evaulation/"
 PICKLE="../data/positive.p"
+NUM_GPUS=4
 
 # Command to be executed with the --normal flag
     # Add your normal command here
-#source myconda
-#mamba activate learning
-python3 model_src/evaluate_model.py \
+# source myconda
+# mamba activate learning
+LOCAL_RANK=$(seq 0 $((NUM_GPUS - 1))) CUDA_VISIBLE_DEVICE=$(seq 0 $((NUM_GPUS - 1))) \
+torchrun --nproc_per_node $NUM_GPUS model_src/evaluate_model.py \
         --model_config "dna6" \
         --dnabert_path $MODEL_PATH \
         --peft_path $PEFT_PATH \
