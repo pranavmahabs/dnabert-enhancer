@@ -9,7 +9,7 @@ PEFT_PATH="../output/best_berten_718/"
 
 DATA_PATH="../data/"
 OUTPATH="../output/positive_evaulation/"
-PICKLE="../data/positive.p"
+PICKLE="../data/full_data_tsv/evaluate.p"
 NUM_GPUS=4
 
 # Command to be executed with the --normal flag

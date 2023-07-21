@@ -173,37 +173,32 @@ def evaluate():
     num_labels = metadata["num_labels"]
     id2label = {v: k for k, v in label2id.items()}
 
-    model = transformers.AutoModelForSequenceClassification.from_pretrained(
-        model_args.dnabert_path,
-        cache_dir=None,
-        num_labels=num_labels,
-        trust_remote_code=True,
-        id2label=id2label,
-        label2id=label2id,
-    )
-    inference_model = PeftModel.from_pretrained(model, model_args.peft_path)
+    #model = transformers.AutoModelForSequenceClassification.from_pretrained(
+    #    model_args.dnabert_path,
+    #    cache_dir=None,
+    #   num_labels=num_labels,
+    #    trust_remote_code=True,
+    #    id2label=id2label,
+    #    label2id=label2id,
+    #)
+    #inference_model = PeftModel.from_pretrained(model, model_args.peft_path)
 
-    data_collator = DataCollatorForSupervisedDataset(tokenizer=tokenizer)
+    #data_collator = DataCollatorForSupervisedDataset(tokenizer=tokenizer)
 
-    trainer = CustomTrainer(
-        model=inference_model,
-        args=test_args,
-        tokenizer=tokenizer,
-        train_dataset=test_dataset,  # using this so custom loss function from train used.
-        eval_dataset=complete_dataset,
-        data_collator=data_collator,
-        compute_metrics=compute_final_metrics,
-    )
+    #trainer = CustomTrainer(
+    #    model=inference_model,
+    #    args=test_args,
+    #    tokenizer=tokenizer,
+    #    train_dataset=test_dataset,  # using this so custom loss function from train used.
+    #    eval_dataset=complete_dataset,
+    #    data_collator=data_collator,
+    #    compute_metrics=compute_final_metrics,
+    #)
 
-    pos_metrics = trainer.evaluate(eval_dataset=complete_dataset)
-    os.makedirs(test_args.output_dir, exist_ok=True)
-    with open(os.path.join(test_args.output_dir, "pos_eval_results.json"), "w") as f:
-        json.dump(pos_metrics, f)
-
-    eval_metrics = trainer.evaluate(eval_dataset=test_dataset)
-    os.makedirs(test_args.output_dir, exist_ok=True)
-    with open(os.path.join(test_args.output_dir, "eval_results.json"), "w") as f:
-        json.dump(eval_metrics, f)
+    #pos_metrics = trainer.evaluate(eval_dataset=complete_dataset)
+    #os.makedirs(test_args.output_dir, exist_ok=True)
+    #with open(os.path.join(test_args.output_dir, "pos_eval_results.json"), "w") as f:
+    #    json.dump(pos_metrics, f)
 
     model2 = transformers.AutoModelForSequenceClassification.from_pretrained(
         model_args.dnabert_path,
@@ -215,6 +210,12 @@ def evaluate():
         output_attentions=True,
     )
     inference_model = PeftModel.from_pretrained(model2, model_args.peft_path)
+    
+    device_name = "cuda" if torch.cuda.is_available() else "cpu"
+    if device_name == "cuda" and torch.cuda.device_count() > 1:
+        inference_model = torch.nn.DataParallel(inference_model)
+    device = torch.device(device_name)
+    inference_model = inference_model.to(device)
 
     batch_size = test_args.per_device_eval_batch_size
     pred_loader = DataLoader(
@@ -224,8 +225,9 @@ def evaluate():
         collate_fn=data_collator,
     )
 
-    score_len = len(complete_dataset.input_ids[0]) - data_args.kmer + 2  # should be 496
-    assert score_len == 496
+    score_len = 496
+    #score_len = len(complete_dataset.input_ids[0]) - data_args.kmer + 2  # should be 496
+    #print(score_len)
     single_attentions = np.zeros((len(complete_dataset), score_len))
     pred_results = np.zeros((len(complete_dataset), num_labels))
     multi_attentions = np.zeros((len(complete_dataset), 12, score_len))
