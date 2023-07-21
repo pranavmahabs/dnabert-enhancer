@@ -224,10 +224,7 @@ def evaluate():
     inference_model = PeftModel.from_pretrained(model2, model_args.peft_path)
 
     device_name = "cuda" if torch.cuda.is_available() else "cpu"
-    if device_name == "cuda" and torch.cuda.device_count() > 1:
-        device = torch.cuda.device(0)
-    else:
-        device = torch.device(device_name)
+    device = torch.device(device_name)
     inference_model = inference_model.to(device)
 
     batch_size = test_args.per_device_eval_batch_size
