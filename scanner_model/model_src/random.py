@@ -2,10 +2,10 @@ import pickle
 from data_dnabert import SupervisedDataset
 import os
 
-with open("../../data/full_data_tsv/supervised_dataset.p", "rb") as handle:
+with open("../data/full_data_tsv/supervised_dataset.p", "rb") as handle:
     dataset = pickle.load(handle)
 
-with open("../../data/positive.p", "rb") as handle2:
+with open("../data/positive.p", "rb") as handle2:
     pos_dataset = pickle.load(handle2)
 
 pos_dataset["train"] = dataset["train"]
