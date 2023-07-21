@@ -14,7 +14,7 @@ from tqdm import tqdm, trange
 
 from peft import PeftConfig, PeftModel
 
-from train import compute_auc_fpr_thresholds, CustomTrainer
+from train import compute_final_metrics, CustomTrainer
 from data_dnabert import SupervisedDataset, DataCollatorForSupervisedDataset
 from tokenizer import (
     DNATokenizer,
@@ -67,11 +67,6 @@ class TestingArguments(transformers.TrainingArguments):
     )
     per_device_eval_batch_size: int = field(default=1)
     seed: int = field(default=42)
-
-
-def compute_metrics_atten(eval_pred):
-    outputs, labels = eval_pred
-    return compute_auc_fpr_thresholds(outputs.logits, labels)
 
 
 def process_scores(attention_scores, kmer):
@@ -185,10 +180,7 @@ def evaluate():
         trust_remote_code=True,
         id2label=id2label,
         label2id=label2id,
-        output_attentions=True,
     )
-
-    config = PeftConfig.from_pretrained(model_args.peft_path)
     inference_model = PeftModel.from_pretrained(model, model_args.peft_path)
 
     data_collator = DataCollatorForSupervisedDataset(tokenizer=tokenizer)
@@ -200,7 +192,7 @@ def evaluate():
         train_dataset=test_dataset,  # using this so custom loss function from train used.
         eval_dataset=complete_dataset,
         data_collator=data_collator,
-        compute_metrics=compute_metrics_atten,
+        compute_metrics=compute_final_metrics,
     )
 
     pos_metrics = trainer.evaluate(eval_dataset=complete_dataset)
@@ -212,6 +204,17 @@ def evaluate():
     os.makedirs(test_args.output_dir, exist_ok=True)
     with open(os.path.join(test_args.output_dir, "eval_results.json"), "w") as f:
         json.dump(eval_metrics, f)
+
+    model2 = transformers.AutoModelForSequenceClassification.from_pretrained(
+        model_args.dnabert_path,
+        cache_dir=None,
+        num_labels=num_labels,
+        trust_remote_code=True,
+        id2label=id2label,
+        label2id=label2id,
+        output_attentions=True,
+    )
+    inference_model = PeftModel.from_pretrained(model2, model_args.peft_path)
 
     batch_size = test_args.per_device_eval_batch_size
     pred_loader = DataLoader(
