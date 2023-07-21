@@ -14,7 +14,7 @@ from tqdm import tqdm, trange
 
 from peft import PeftConfig, PeftModel
 
-from train import compute_metrics, compute_final_metrics, CustomTrainer
+from train import compute_auc_fpr_thresholds, CustomTrainer
 from data_dnabert import SupervisedDataset, DataCollatorForSupervisedDataset
 from tokenizer import (
     DNATokenizer,
@@ -67,6 +67,12 @@ class TestingArguments(transformers.TrainingArguments):
     )
     per_device_eval_batch_size: int = field(default=1)
     seed: int = field(default=42)
+
+
+def compute_metrics_atten(eval_pred):
+    print(eval_pred)
+    logits, labels = eval_pred
+    return compute_auc_fpr_thresholds(logits, labels)
 
 
 def process_scores(attention_scores, kmer):
@@ -195,7 +201,7 @@ def evaluate():
         train_dataset=test_dataset,  # using this so custom loss function from train used.
         eval_dataset=complete_dataset,
         data_collator=data_collator,
-        compute_metrics=compute_final_metrics,
+        compute_metrics=compute_metrics_atten,
     )
 
     pos_metrics = trainer.evaluate(eval_dataset=complete_dataset)
