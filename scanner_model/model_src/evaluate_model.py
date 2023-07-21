@@ -10,6 +10,7 @@ import transformers
 import sklearn
 import numpy as np
 from torch.utils.data import SequentialSampler, DataLoader
+from torch.nn.parallel import DistributedDataParallel as DDP
 from tqdm import tqdm, trange
 
 from peft import PeftConfig, PeftModel
@@ -67,6 +68,17 @@ class TestingArguments(transformers.TrainingArguments):
     )
     per_device_eval_batch_size: int = field(default=1)
     seed: int = field(default=42)
+
+
+def setup(rank, world_size):
+    os.environ["MASTER_ADDR"] = "localhost"
+    os.environ["MASTER_PORT"] = "12345"
+
+    torch.distributed.init_process_group("gloo", rank=rank, world_size=world_size)
+
+
+def cleanup():
+    torch.distributed.destroy_process_group()
 
 
 def process_scores(attention_scores, kmer):
@@ -173,19 +185,19 @@ def evaluate():
     num_labels = metadata["num_labels"]
     id2label = {v: k for k, v in label2id.items()}
 
-    #model = transformers.AutoModelForSequenceClassification.from_pretrained(
+    # model = transformers.AutoModelForSequenceClassification.from_pretrained(
     #    model_args.dnabert_path,
     #    cache_dir=None,
     #   num_labels=num_labels,
     #    trust_remote_code=True,
     #    id2label=id2label,
     #    label2id=label2id,
-    #)
-    #inference_model = PeftModel.from_pretrained(model, model_args.peft_path)
+    # )
+    # inference_model = PeftModel.from_pretrained(model, model_args.peft_path)
 
-    #data_collator = DataCollatorForSupervisedDataset(tokenizer=tokenizer)
+    # data_collator = DataCollatorForSupervisedDataset(tokenizer=tokenizer)
 
-    #trainer = CustomTrainer(
+    # trainer = CustomTrainer(
     #    model=inference_model,
     #    args=test_args,
     #    tokenizer=tokenizer,
@@ -193,11 +205,11 @@ def evaluate():
     #    eval_dataset=complete_dataset,
     #    data_collator=data_collator,
     #    compute_metrics=compute_final_metrics,
-    #)
+    # )
 
-    #pos_metrics = trainer.evaluate(eval_dataset=complete_dataset)
-    #os.makedirs(test_args.output_dir, exist_ok=True)
-    #with open(os.path.join(test_args.output_dir, "pos_eval_results.json"), "w") as f:
+    # pos_metrics = trainer.evaluate(eval_dataset=complete_dataset)
+    # os.makedirs(test_args.output_dir, exist_ok=True)
+    # with open(os.path.join(test_args.output_dir, "pos_eval_results.json"), "w") as f:
     #    json.dump(pos_metrics, f)
 
     model2 = transformers.AutoModelForSequenceClassification.from_pretrained(
@@ -210,11 +222,12 @@ def evaluate():
         output_attentions=True,
     )
     inference_model = PeftModel.from_pretrained(model2, model_args.peft_path)
-    
+
     device_name = "cuda" if torch.cuda.is_available() else "cpu"
     if device_name == "cuda" and torch.cuda.device_count() > 1:
-        inference_model = torch.nn.DataParallel(inference_model)
-    device = torch.device(device_name)
+        device = torch.cuda.device(0)
+    else:
+        device = torch.device(device_name)
     inference_model = inference_model.to(device)
 
     batch_size = test_args.per_device_eval_batch_size
@@ -226,17 +239,18 @@ def evaluate():
     )
 
     score_len = 496
-    #score_len = len(complete_dataset.input_ids[0]) - data_args.kmer + 2  # should be 496
-    #print(score_len)
+    # score_len = len(complete_dataset.input_ids[0]) - data_args.kmer + 2  # should be 496
     single_attentions = np.zeros((len(complete_dataset), score_len))
     pred_results = np.zeros((len(complete_dataset), num_labels))
     multi_attentions = np.zeros((len(complete_dataset), 12, score_len))
+    true_labels = np.zeros(len(complete_dataset))
 
     for index, batch in enumerate(tqdm(pred_loader, desc="Predicting")):
         inference_model.eval()
 
         with torch.no_grad():
-            input_ids, masks = batch["input_ids"], batch["attention_mask"]
+            input_ids = batch["input_ids"].to(device)
+            masks = batch["attention_mask"].to(device)
             labels = batch["labels"]
 
             outputs = inference_model(input_ids, masks)
@@ -258,9 +272,14 @@ def evaluate():
                 index * batch_size : index * batch_size + len(input_ids), :
             ] = out_logits
 
+            true_labels[
+                index * batch_size : index * batch_size + len(input_ids)
+            ] = labels
+
     np.save(os.path.join(test_args.output_dir, "atten.npy"), single_attentions)
     np.save(os.path.join(test_args.output_dir, "pred_results.npy"), pred_results)
     np.save(os.path.join(test_args.output_dir, "heads_atten.npy"), multi_attentions)
+    np.save(os.path.join(test_args.output_dir, "labels.npy"), true_labels)
 
 
 if __name__ == "__main__":
