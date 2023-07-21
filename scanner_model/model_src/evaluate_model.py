@@ -14,6 +14,7 @@ from tqdm import tqdm, trange
 
 from peft import PeftConfig, PeftModel
 
+from train import compute_metrics
 from data_dnabert import SupervisedDataset, DataCollatorForSupervisedDataset
 from tokenizer import (
     DNATokenizer,
@@ -215,6 +216,7 @@ def evaluate():
         tokenizer=tokenizer,
         eval_dataset=complete_dataset,
         data_collator=data_collator,
+        compute_metrics=compute_metrics,
     )
 
     eval_metrics = trainer.evaluate(eval_dataset=complete_dataset)
