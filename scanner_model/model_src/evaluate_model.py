@@ -215,11 +215,9 @@ def evaluate():
     trainer = transformers.Trainer(
         model=inference_model,
         args=train_args,
-        do_train=False,
-        do_predict=True,
         tokenizer=tokenizer,
+        eval_dataset=complete_dataset,
         data_collator=data_collator,
-        dataloader_drop_last=False,
     )
 
     eval_results = trainer.predict(test_dataset=complete_dataset)
@@ -231,6 +229,8 @@ def evaluate():
     np.save(os.path.join(train_args.output_dir, "atten.npy"), atten_scores)
     np.save(os.path.join(train_args.output_dir, "pred_results.npy"), eval_logits)
     np.save(os.path.join(train_args.output_dir, "heads_atten.npy"), all_scores)
+
+    eval_metrics = trainer.evaluate(eval_dataset=complete_dataset)
 
     os.makedirs(train_args.output_dir, exist_ok=True)
     with open(os.path.join(train_args.output_dir, "eval_results.json"), "w") as f:
