@@ -70,9 +70,8 @@ class TestingArguments(transformers.TrainingArguments):
 
 
 def compute_metrics_atten(eval_pred):
-    print(eval_pred)
-    logits, labels = eval_pred
-    return compute_auc_fpr_thresholds(logits, labels)
+    outputs, labels = eval_pred
+    return compute_auc_fpr_thresholds(outputs.logits, labels)
 
 
 def process_scores(attention_scores, kmer):
