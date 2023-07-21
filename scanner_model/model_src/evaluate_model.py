@@ -69,29 +69,6 @@ class TrainingArguments(transformers.TrainingArguments):
     seed: int = field(default=42)
 
 
-def calculate_metric_with_sklearn(logits: np.ndarray, labels: np.ndarray):
-    predictions = np.argmax(logits, axis=-1)
-    return {
-        "accuracy": sklearn.metrics.accuracy_score(labels, predictions),
-        "f1": sklearn.metrics.f1_score(
-            labels, predictions, average="macro", zero_division=0
-        ),
-        "matthews_correlation": sklearn.metrics.matthews_corrcoef(labels, predictions),
-        "precision": sklearn.metrics.precision_score(
-            labels, predictions, average="macro", zero_division=0
-        ),
-        "recall": sklearn.metrics.recall_score(
-            labels, predictions, average="macro", zero_division=0
-        ),
-        "AUC_score_0":
-        ## Expects that labels are provided in a one-hot encoded format.
-        sklearn.metrics.roc_auc_score((labels == 0), logits[:, 0]),
-        "AUC_score_2":
-        ## Expects that labels are provided in a one-hot encoded format.
-        sklearn.metrics.roc_auc_score((labels == 2), logits[:, 2]),
-    }
-
-
 def process_scores(attention_scores, kmer):
     softmax = torch.nn.Softmax(dim=1)
     scores = np.zeros([attention_scores.shape[0], attention_scores.shape[-1]])
@@ -229,7 +206,6 @@ def evaluate():
     pred_loader = DataLoader(
         dataset=complete_dataset,
         batch_size=batch_size,
-        batch_sampler=pred_sampler,
         shuffle=False,
         collate_fn=data_collator,
     )
