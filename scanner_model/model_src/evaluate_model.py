@@ -264,7 +264,7 @@ def evaluate():
             ] = multi_attn
 
             # Save Logits #
-            out_logits = outputs.logits.detach().numpy()
+            out_logits = outputs.logits.cpu().detach().numpy()
             pred_results[
                 index * batch_size : index * batch_size + len(input_ids), :
             ] = out_logits
