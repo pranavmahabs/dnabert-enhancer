@@ -14,7 +14,7 @@ from tqdm import tqdm, trange
 
 from peft import PeftConfig, PeftModel
 
-from train import compute_metrics
+from train import compute_metrics, compute_final_metrics, CustomTrainer
 from data_dnabert import SupervisedDataset, DataCollatorForSupervisedDataset
 from tokenizer import (
     DNATokenizer,
@@ -59,7 +59,7 @@ class DataArguments:
 
 
 @dataclass
-class TrainingArguments(transformers.TrainingArguments):
+class TestingArguments(transformers.TrainingArguments):
     cache_dir: Optional[str] = field(default=None)
     run_name: str = field(default="run")
     model_max_length: int = field(
@@ -141,9 +141,9 @@ def process_multi_score(attention_scores, kmer):
 
 def evaluate():
     parser = transformers.HfArgumentParser(
-        (ModelArguments, DataArguments, TrainingArguments)
+        (ModelArguments, DataArguments, TestingArguments)
     )
-    model_args, data_args, train_args = parser.parse_args_into_dataclasses()
+    model_args, data_args, test_args = parser.parse_args_into_dataclasses()
 
     tokenizer = DNATokenizer(
         vocab_file=PRETRAINED_VOCAB_FILES_MAP["vocab_file"][model_args.model_config],
@@ -160,6 +160,7 @@ def evaluate():
         dataset = pickle.load(handle)
 
     complete_dataset = dataset["positive"]
+    test_dataset = dataset["test"]
 
     data_collator = DataCollatorForSupervisedDataset(tokenizer=tokenizer)
 
@@ -187,22 +188,27 @@ def evaluate():
 
     data_collator = DataCollatorForSupervisedDataset(tokenizer=tokenizer)
 
-    trainer = transformers.Trainer(
+    trainer = CustomTrainer(
         model=inference_model,
-        args=train_args,
+        args=test_args,
         tokenizer=tokenizer,
+        train_dataset=test_dataset,  # using this so custom loss function from train used.
         eval_dataset=complete_dataset,
         data_collator=data_collator,
-        compute_metrics=compute_metrics,
+        compute_metrics=compute_final_metrics,
     )
 
-    eval_metrics = trainer.evaluate(eval_dataset=complete_dataset)
-    os.makedirs(train_args.output_dir, exist_ok=True)
-    with open(os.path.join(train_args.output_dir, "eval_results.json"), "w") as f:
+    pos_metrics = trainer.evaluate(eval_dataset=complete_dataset)
+    os.makedirs(test_args.output_dir, exist_ok=True)
+    with open(os.path.join(test_args.output_dir, "pos_eval_results.json"), "w") as f:
+        json.dump(pos_metrics, f)
+
+    eval_metrics = trainer.evaluate(eval_dataset=test_dataset)
+    os.makedirs(test_args.output_dir, exist_ok=True)
+    with open(os.path.join(test_args.output_dir, "eval_results.json"), "w") as f:
         json.dump(eval_metrics, f)
 
-    batch_size = train_args.per_device_eval_batch_size
-    pred_sampler = SequentialSampler(complete_dataset)
+    batch_size = test_args.per_device_eval_batch_size
     pred_loader = DataLoader(
         dataset=complete_dataset,
         batch_size=batch_size,
@@ -242,9 +248,9 @@ def evaluate():
                 index * batch_size : index * batch_size + len(input_ids), :
             ] = out_logits
 
-    np.save(os.path.join(train_args.output_dir, "atten.npy"), single_attentions)
-    np.save(os.path.join(train_args.output_dir, "pred_results.npy"), pred_results)
-    np.save(os.path.join(train_args.output_dir, "heads_atten.npy"), multi_attentions)
+    np.save(os.path.join(test_args.output_dir, "atten.npy"), single_attentions)
+    np.save(os.path.join(test_args.output_dir, "pred_results.npy"), pred_results)
+    np.save(os.path.join(test_args.output_dir, "heads_atten.npy"), multi_attentions)
 
 
 if __name__ == "__main__":

@@ -194,6 +194,44 @@ def calculate_metric_with_sklearn(logits: np.ndarray, labels: np.ndarray):
     }
 
 
+def compute_auc_fpr_thresholds(logits, labels):
+    ## class 0
+    [fprs0, tprs0, thrs0] = sklearn.metrics.roc_curve((labels == 0), logits[:, 0])
+    sort_ix = np.argsort(np.abs(fprs0 - 0.1))
+    fpr10_0 = thrs0[sort_ix[0]]
+    sort_ix = np.argsort(np.abs(fprs0 - 0.05))
+    fpr05_0 = thrs0[sort_ix[0]]
+    sort_ix = np.argsort(np.abs(fprs0 - 0.03))
+    fpr03_0 = thrs0[sort_ix[0]]
+    sort_ix = np.argsort(np.abs(fprs0 - 0.01))
+    fpr01_0 = thrs0[sort_ix[0]]
+
+    ## class 2
+    [fprs2, tprs2, thrs2] = sklearn.metrics.roc_curve((labels == 2), logits[:, 2])
+    sort_ix = np.argsort(np.abs(fprs2 - 0.1))
+    fpr10_2 = thrs2[sort_ix[0]]
+    sort_ix = np.argsort(np.abs(fprs2 - 0.05))
+    fpr05_2 = thrs2[sort_ix[0]]
+    sort_ix = np.argsort(np.abs(fprs2 - 0.03))
+    fpr03_2 = thrs2[sort_ix[0]]
+    sort_ix = np.argsort(np.abs(fprs2 - 0.01))
+    fpr01_2 = thrs2[sort_ix[0]]
+
+    predictions = np.argmax(logits, axis=-1)
+
+    return {
+        "accuracy": sklearn.metrics.accuracy_score(labels, predictions),
+        "AUC_score_0":
+        ## Expects that labels are provided in a one-hot encoded format.
+        sklearn.metrics.roc_auc_score((labels == 0), logits[:, 0]),
+        "AUC_score_2":
+        ## Expects that labels are provided in a one-hot encoded format.
+        sklearn.metrics.roc_auc_score((labels == 2), logits[:, 2]),
+        "FPR_Thresholds_0": [fpr10_0, fpr05_0, fpr03_0, fpr01_0],
+        "FPR_Thresholds_2": [fpr10_2, fpr05_2, fpr03_2, fpr01_2],
+    }
+
+
 """
 Compute metrics used for huggingface trainer.
 """
@@ -202,6 +240,11 @@ Compute metrics used for huggingface trainer.
 def compute_metrics(eval_pred):
     logits, labels = eval_pred
     return calculate_metric_with_sklearn(logits, labels)
+
+
+def compute_final_metrics(eval_pred):
+    logits, labels = eval_pred
+    return compute_auc_fpr_thresholds(logits, labels)
 
 
 def train():
@@ -317,6 +360,7 @@ def train():
 
     # get the evaluation results from trainer
     if training_args.eval_and_save_results:
+        trainer.compute_metrics = compute_final_metrics
         results = trainer.evaluate(eval_dataset=test_dataset)
         os.makedirs(training_args.output_dir, exist_ok=True)
         with open(
