@@ -1,5 +1,4 @@
 import pickle
-from data_dnabert import SupervisedDataset
 import os
 
 with open("../data/full_data_tsv/supervised_dataset.p", "rb") as handle:
