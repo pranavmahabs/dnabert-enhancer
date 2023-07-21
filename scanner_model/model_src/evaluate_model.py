@@ -217,7 +217,7 @@ def evaluate():
         data_collator=data_collator,
     )
 
-    eval_metrics = trainer.evaluate(test_dataset=complete_dataset)
+    eval_metrics = trainer.evaluate(eval_dataset=complete_dataset)
     os.makedirs(train_args.output_dir, exist_ok=True)
     with open(os.path.join(train_args.output_dir, "eval_results.json"), "w") as f:
         json.dump(eval_metrics, f)
@@ -231,10 +231,6 @@ def evaluate():
         shuffle=False,
         collate_fn=data_collator,
     )
-
-    device_name = "cuda" if torch.cuda.is_available() else "cpu"
-    if device_name is "cuda" and torch.cuda.device_count() > 1:
-        inference_model = torch.nn.DataParallel(inference_model)
 
     score_len = len(complete_dataset.input_ids[0]) - data_args.kmer + 2  # should be 496
     assert score_len == 496
