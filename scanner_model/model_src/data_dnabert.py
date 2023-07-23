@@ -127,34 +127,26 @@ def pickle_dataset(config, file_base):
         do_lower_case=PRETRAINED_INIT_CONFIGURATION[config]["do_lower_case"],
         max_len=PRETRAINED_POSITIONAL_EMBEDDINGS_SIZES[config],
     )
-    outfile = file_base + "supervised_dataset.p"
+    supervised_outfile = file_base + "supervised_dataset.p"
     tsv_files = [file_base + "val.tsv", file_base + "train.tsv", file_base + "test.tsv"]
     to_dump = {}
     for tsv_file, name in zip(tsv_files, ["val", "train", "test"]):
         dataset = SupervisedDataset(tsv_file, tokenizer)
         to_dump[name] = dataset
 
-    with open(outfile, "wb") as handle:
+    positive_outfile = file_base + "positive.p"
+    file = file_base + "positive.tsv"
+    positive_dataset = SupervisedDataset(file, tokenizer)
+    positive_dump = {"positive": positive_dataset, "test": to_dump["test"]}
+
+    with open(supervised_outfile, "wb") as handle:
         pickle.dump(to_dump, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
-
-def pickle_single(config, file_base):
-    tokenizer = DNATokenizer(
-        vocab_file=PRETRAINED_VOCAB_FILES_MAP["vocab_file"][config],
-        do_lower_case=PRETRAINED_INIT_CONFIGURATION[config]["do_lower_case"],
-        max_len=PRETRAINED_POSITIONAL_EMBEDDINGS_SIZES[config],
-    )
-    outfile = file_base + "positive.p"
-    tsv_file = file_base + "positive.tsv"
-    dataset = SupervisedDataset(tsv_file, tokenizer)
-    to_dump = {"positive": dataset}
-
-    with open(outfile, "wb") as handle:
-        pickle.dump(to_dump, handle, protocol=pickle.HIGHEST_PROTOCOL)
+    with open(positive_outfile, "wb") as handle2:
+        pickle.dump(positive_dump, handle2, protocol=pickle.HIGHEST_PROTOCOL)
 
 
 if __name__ == "__main__":
-    file_base = "../data/"
-    config = "dna6"
-    # pickle_dataset(config, file_base)
-    pickle_single(config, file_base)
+    config = sys.argv[1]
+    file_base = sys.argv[2]
+    pickle_dataset(config, file_base)

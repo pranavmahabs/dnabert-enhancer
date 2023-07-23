@@ -3,7 +3,7 @@ import numpy as np
 import sys
 from Bio import SeqIO
 from pybedtools import BedTool
-from attention_analysis.motif_utils import seq2kmer
+from motif_utils import seq2kmer
 
 import argparse
 from dataclasses import dataclass
@@ -200,7 +200,7 @@ def create_single_tsv(param: SingleInput):
             _k = 1
         label_list.append(_k)
 
-    generate_tsv(data_list, label_list, "positive.tsv")
+    generate_tsv(data_list, label_list, results_dir + "positive.tsv")
 
 
 if __name__ == "__main__":
@@ -217,7 +217,7 @@ if __name__ == "__main__":
         "--results-folder", required=True, help="Path to the results folder"
     )
     parser.add_argument(
-        "--generate-single_tsv",
+        "--generate-single-tsv",
         required=False,
         help="If you only want to convert ONE BED file to a TSV.",
     )
@@ -231,7 +231,7 @@ if __name__ == "__main__":
         )
         create_single_tsv(param)
 
-    else:
+    if args.negative_file and args.positive_file:
         param = ProcessInput(
             args.positive_file,
             args.negative_file,
