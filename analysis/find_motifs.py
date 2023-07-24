@@ -1,5 +1,10 @@
 #### ::: DNABERT-viz find motifs ::: ####
 
+"""
+REQUIRES NEGATIVE SAMPLES.
+Creates actual PWMs for motifs.
+"""
+
 import os
 import pandas as pd
 import numpy as np
@@ -55,58 +60,58 @@ def main():
 
     parser.add_argument(
         "--align_all_ties",
-        action='store_true',
+        action="store_true",
         help="Whether to keep all best alignments when ties encountered",
     )
 
     parser.add_argument(
         "--save_file_dir",
-        default='.',
+        default=".",
         type=str,
         help="Path to save outputs",
     )
 
     parser.add_argument(
         "--verbose",
-        action='store_true',
+        action="store_true",
         help="Verbosity controller",
     )
 
     parser.add_argument(
         "--return_idx",
-        action='store_true',
+        action="store_true",
         help="Whether the indices of the motifs are only returned",
     )
 
     # TODO: add the conditions
     args = parser.parse_args()
 
-    atten_scores = np.load(os.path.join(args.predict_dir,"atten.npy"))
-    pred = np.load(os.path.join(args.predict_dir,"pred_results.npy"))
-    dev = pd.read_csv(os.path.join(args.data_dir,"dev.tsv"),sep='\t',header=0)
-    dev.columns = ['sequence','label']
-    dev['seq'] = dev['sequence'].apply(utils.kmer2seq)
-    dev_pos = dev[dev['label'] == 1]
-    dev_neg = dev[dev['label'] == 0]
+    atten_scores = np.load(os.path.join(args.predict_dir, "atten.npy"))
+    pred = np.load(os.path.join(args.predict_dir, "pred_results.npy"))
+    dev = pd.read_csv(os.path.join(args.data_dir, "dev.tsv"), sep="\t", header=0)
+    dev.columns = ["sequence", "label"]
+    dev["seq"] = dev["sequence"].apply(utils.kmer2seq)
+    dev_pos = dev[dev["label"] == 1]
+    dev_neg = dev[dev["label"] == 0]
     pos_atten_scores = atten_scores[dev_pos.index.values]
     neg_atten_scores = atten_scores[dev_neg.index.values]
     assert len(dev_pos) == len(pos_atten_scores)
 
     # run motif analysis
-    merged_motif_seqs = utils.motif_analysis(dev_pos['seq'],
-                                        dev_neg['seq'],
-                                        pos_atten_scores,
-                                        window_size = args.window_size,
-                                        min_len = args.min_len,
-                                        pval_cutoff = args.pval_cutoff,
-                                        min_n_motif = args.min_n_motif,
-                                        align_all_ties = args.align_all_ties,
-                                        save_file_dir = args.save_file_dir,
-                                        verbose = args.verbose,
-                                        return_idx  = args.return_idx
-                                    )
+    merged_motif_seqs = utils.motif_analysis(
+        dev_pos["seq"],
+        dev_neg["seq"],
+        pos_atten_scores,
+        window_size=args.window_size,
+        min_len=args.min_len,
+        pval_cutoff=args.pval_cutoff,
+        min_n_motif=args.min_n_motif,
+        align_all_ties=args.align_all_ties,
+        save_file_dir=args.save_file_dir,
+        verbose=args.verbose,
+        return_idx=args.return_idx,
+    )
+
 
 if __name__ == "__main__":
     main()
-
-

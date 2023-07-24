@@ -1,6 +1,6 @@
 model/__pycache__
 model/.ipynb_checkpoints/
-model/model_src/__pycache__
+model/transformer_src/__pycache__
 model/pretrained_6mer/pytorch_model.bin
 model/attention_analysis/__pycache__
 
