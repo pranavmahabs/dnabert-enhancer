@@ -1,0 +1,10 @@
+{
+    "metadata": {
+        "num_labels" : 3
+    },
+    "label2id": {
+        "Poised Enhancer" : 0,
+        "Noise" : 1,
+        "Active Enhancer" : 2
+    }
+}

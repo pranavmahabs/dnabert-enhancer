@@ -1,8 +1,8 @@
-scanner_model/__pycache__
-scanner_model/.ipynb_checkpoints/
-scanner_model/model_src/__pycache__
-scanner_model/pretrained_6mer/pytorch_model.bin
-scanner_model/attention_analysis/__pycache__
+model/__pycache__
+model/.ipynb_checkpoints/
+model/model_src/__pycache__
+model/pretrained_6mer/pytorch_model.bin
+model/attention_analysis/__pycache__
 
 data/best_model_params.pt
 data/full_data_tsv
