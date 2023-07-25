@@ -11,3 +11,5 @@ data/test.tsv
 data/val.tsv
 data/positive.p
 data/positive.tsv
+
+analysis/__pycache__

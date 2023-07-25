@@ -3,6 +3,7 @@
 """
 REQUIRES NEGATIVE SAMPLES.
 Creates actual PWMs for motifs.
+For use case, please look at the DNABERT github page.
 """
 
 import os

@@ -17,7 +17,7 @@ from peft import PeftConfig, PeftModel
 
 from train import compute_final_metrics, CustomTrainer
 from data_dnabert import SupervisedDataset, DataCollatorForSupervisedDataset
-from tokenizer import (
+from dna_tokenizer import (
     DNATokenizer,
     PRETRAINED_INIT_CONFIGURATION,
     PRETRAINED_VOCAB_FILES_MAP,
