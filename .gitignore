@@ -12,3 +12,4 @@ data/val.tsv
 data/positive.p
 
 analysis/__pycache__
+analysis/.ipynb_checkpoints

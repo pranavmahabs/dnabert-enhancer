@@ -150,7 +150,7 @@ def find_high_attention(score, min_len=5, **kwargs):
     return motif_regions
 
 
-def attention_seq(attentions, sequences, out_dir, min_len=5, indices=None):
+def attention_seq(attentions, sequences, out_dir, min_len=5, indices=None, name="All"):
     # current_dir = os.path.dirname(os.path.abspath(__file__))
     # main_dir = os.path.dirname(current_dir)
 
@@ -162,14 +162,16 @@ def attention_seq(attentions, sequences, out_dir, min_len=5, indices=None):
 
     if len(attentions.shape) == 2:
         print("Processing Single Attention Scores.")
-        with open(os.path.join(out_dir, "high_attention.fa"), "w") as fa:
+        with open(
+            os.path.join(out_dir, "{}_high_attention.fa".format(name)), "w"
+        ) as fa:
             for index, attention, sequence in zip(
                 range(attentions.shape[0]), attentions, sequences
             ):
                 motif_regions = find_high_attention(attention, min_len)
                 for motif_idx in motif_regions:
                     seq = sequence[motif_idx[0] : motif_idx[1]]
-                    to_write = ">Sequence {} at Position: {} - {}\n".format(
+                    to_write = ">{} at Position: {} - {}\n".format(
                         index, motif_idx[0], motif_idx[1]
                     )
                     to_write += seq + "\n"
@@ -178,8 +180,10 @@ def attention_seq(attentions, sequences, out_dir, min_len=5, indices=None):
     elif len(attentions.shape) == 3:
         print("Processing Multi-Head Attention Scores.")
         for head in range(attentions.shape[1]):
-            file_name = os.path.join(out_dir, "high_attention.fa")
-            with open(os.path.join(out_dir, file_name), "w") as hfa:
+            file_name = os.path.join(
+                out_dir, "{}_head{}_high_attention.fa".format(name, head)
+            )
+            with open(file_name, "w") as hfa:
                 for index, attention, sequence in zip(
                     range(attentions.shape[0]), attentions, sequences
                 ):
@@ -224,7 +228,7 @@ def plot_line(values, name):
     # Add labels and title
     plt.xlabel("Index")
     plt.ylabel("Height")
-    plt.title(f"Line Plot of List Values for {name}")
+    plt.title(f"Average Attention Scores for {name}")
 
     # Show the plot
     plt.show()
