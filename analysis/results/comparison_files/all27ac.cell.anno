@@ -1,0 +1,107 @@
+1	CL-0000047	neuronal stem cell	brain	stem
+2	CL-0000062	osteoblast	bone	normal
+3	CL-0000084	T-cell	blood	normal
+4	CL-0000127	astrocyte	brain	normal
+5	CL-0000134	mesenchymal stem cell	ESC	stem
+6	CL-0000182	hepatocyte	liver	normal
+7	CL-0000223	endodermal cell	endodermal	stem
+8	CL-0000236	B cell	blood	normal
+9	CL-0000312	keratinocyte	skin	normal
+10	CL-0000351	trophoblast cell	trophoblast	stem
+11	CL-0000515	skeletal muscle myoblast	muscle	normal
+12	CL-0000623	natural killer cell	blood	normal
+13	CL-0000624	CD4-positive, alpha-beta T cell	blood	normal
+14	CL-0000625	CD8-positive, alpha-beta T cell	blood	normal
+15	CL-0000746	cardiac muscle cell	heart	normal
+16	CL-0000792	CD4-positive, CD25-positive, alpha-beta regulatory T cell	blood	normal
+17	CL-0000895	naive thymus-derived CD4-positive, alpha-beta T cell	blood	normal
+18	CL-0000897	CD4-positive, alpha-beta memory T cell	blood	normal
+19	CL-0000905	effector memory CD4-positive, alpha-beta T cell	blood	normal
+20	CL-0000909	CD8-positive, alpha-beta memory T cell	blood	normal
+21	CL-0001054	CD14-positive monocyte	blood	normal
+22	CL-0001059	common myeloid progenitor, CD34-positive	blood	progenitor
+23	CL-0002327	mammary epithelial cell	breast	normal
+24	CL-0002372	myotube	muscle	normal
+25	CL-0002551	fibroblast of dermis	skin	normal
+26	CL-0002553	fibroblast of lung	lung	normal
+27	CL-0002618	endothelial cell of umbilical vein	umbilical	normal
+28	CL-0011020	neural progenitor cell	brain	progenitor
+29	CL-1001606	foreskin keratinocyte	skin	normal
+30	CL-1001608	foreskin fibroblast	skin	normal
+31	CL-2000044	brain microvascular endothelial cell	brain	normal
+32	CL-2000045	foreskin melanocyte	skin	cancer
+33	EFO-0001187	HepG2	liver	cancer
+34	EFO-0001196	IMR-90	lung	normal
+35	EFO-0001203	MCF-7	breast	cancer
+36	EFO-0001221	NCI-H929	blood	cancer
+37	EFO-0002067	K562	blood	cancer
+38	EFO-0002074	PC-3	prostate	cancer
+39	EFO-0002106	A673	muscle	cancer
+40	EFO-0002330	SJSA1	bone	cancer
+41	EFO-0002713	Panc1	pancreas	cancer
+42	EFO-0002784	GM12878	blood	normal
+43	EFO-0002791	HeLa-S3	ovary	cancer
+44	EFO-0002793	HL-60	blood	cancer
+45	EFO-0002824	HCT116	colon	cancer
+46	EFO-0002847	PC-9	lung	cancer
+49	EFO-0003072	SK-N-SH	brain	cancer
+50	EFO-0005715	WERI-Rb-1	eye	cancer
+51	EFO-0005719	Karpas-422	blood	cancer
+52	EFO-0005722	SJCRH30	muscle	cancer
+53	EFO-0005723	GM23248	skin	normal
+54	EFO-0005724	MM.1S	blood	cancer
+55	EFO-0006270	AG04450	lung	normal
+56	EFO-0007074	DND-41	blood	cancer
+59	EFO-0007598	HAP-1	blood	cancer
+60	EFO-0007610	RWPE2	prostate	cancer
+62	NTR-0000493	left ventricle myocardium inferior	heart	normal
+63	NTR-0000856	mesendoderm	ESC	normal
+64	UBERON-0000059	large intestine	intestine	normal
+65	UBERON-0000317	colonic mucosa	colon	normal
+66	UBERON-0000473	testis	testis	normal
+67	UBERON-0000945	stomach	stomach	normal
+68	UBERON-0000947	aorta	heart	normal
+69	UBERON-0000992	ovary	ovary	normal
+70	UBERON-0000995	uterus	uterus	normal
+71	UBERON-0000996	vagina	vagian	normal
+72	UBERON-0001114	right lobe of liver	liver	normal
+73	UBERON-0001150	body of pancreas	pancreas	normal
+74	UBERON-0001157	transverse colon	colon	normal
+75	UBERON-0001159	sigmoid colon	colon	normal
+76	UBERON-0001211	Peyer's patch	intestine	normal
+77	UBERON-0001264	pancreas	pancreas	normal
+78	UBERON-0001323	tibial nerve	nerve	normal
+79	UBERON-0001383	muscle of leg	muscle	normal
+80	UBERON-0001496	ascending aorta	heart	normal
+81	UBERON-0001515	thoracic aorta	heart	normal
+82	UBERON-0001774	muscle of trunk	muscle	normal
+83	UBERON-0001873	caudate nucleus	brain	normal
+84	UBERON-0001987	placenta	placenta	normal
+85	UBERON-0002046	thyroid gland	thyroid	normal
+86	UBERON-0002048	lung	lung	normal
+87	UBERON-0002078	right cardiac atrium	heart	normal
+88	UBERON-0002080	heart right ventricle	heart	normal
+89	UBERON-0002084	heart left ventricle	heart	normal
+90	UBERON-0002106	spleen	spleen	normal
+91	UBERON-0002107	liver	liver	normal
+92	UBERON-0002108	small intestine	intestine	normal
+93	UBERON-0002113	kidney	kidney	normal
+94	UBERON-0002168	left lung	lung	normal
+95	UBERON-0002170	upper lobe of right lung	lung	normal
+96	UBERON-0002171	lower lobe of right lung	lung	normal
+97	UBERON-0002240	spinal cord	spine	normal
+98	UBERON-0002367	prostate gland	prostate	normal
+99	UBERON-0002369	adrenal gland	adrenal	normal
+100	UBERON-0002370	thymus	thymus	normal
+101	UBERON-0003124	chorion	chorion	normal
+102	UBERON-0004648	esophagus muscularis mucosa	esophagus	normal
+103	UBERON-0006483	middle frontal area 46	brain	normal
+104	UBERON-0006631	right atrium auricular region	heart	normal
+105	UBERON-0006920	esophagus squamous epithelium	esophagus	normal
+106	UBERON-0007610	tibial artery	artery	normal
+107	UBERON-0008367	breast epithelium	breast	normal
+108	UBERON-0008450	psoas muscle	muscle	normal
+109	UBERON-0008952	upper lobe of left lung	lung	normal
+110	UBERON-0008953	lower lobe of left lung	lung	normal
+111	UBERON-0011907	gastrocnemius medialis	gastrocnemius	normal
+112	UBERON-0036149	suprapubic skin	skin	normal
