@@ -150,13 +150,9 @@ def find_high_attention(score, min_len=5, **kwargs):
     return motif_regions
 
 
-def attention_seq(attentions, sequences, out_dir, min_len=5, indices=None, name="All"):
-    # current_dir = os.path.dirname(os.path.abspath(__file__))
-    # main_dir = os.path.dirname(current_dir)
-
-    # utils_path = os.path.join(main_dir, "model", "utils_dir")
-    # sys.path.append(utils_path)
-
+def attention_seq(
+    attentions, sequences, out_dir, min_len=5, window=4, indices=None, name="All"
+):
     if not os.path.exists(out_dir):
         os.makedirs(out_dir)
 
@@ -170,9 +166,11 @@ def attention_seq(attentions, sequences, out_dir, min_len=5, indices=None, name=
             ):
                 motif_regions = find_high_attention(attention, min_len)
                 for motif_idx in motif_regions:
-                    seq = sequence[motif_idx[0] : motif_idx[1]]
+                    safe_start = max(motif_idx[0] - window, 0)
+                    safe_end = min(motif_idx[1] + window, len(sequence))
+                    seq = sequence[safe_start:safe_end]
                     to_write = ">{} at Position: {} - {}\n".format(
-                        index, motif_idx[0], motif_idx[1]
+                        index, safe_start, safe_end
                     )
                     to_write += seq + "\n"
                     fa.write(to_write)
