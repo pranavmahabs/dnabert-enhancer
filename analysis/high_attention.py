@@ -169,9 +169,7 @@ def attention_seq(
                     safe_start = max(motif_idx[0] - window, 0)
                     safe_end = min(motif_idx[1] + window, len(sequence))
                     seq = sequence[safe_start:safe_end]
-                    to_write = ">{} at Position: {} - {}\n".format(
-                        index, safe_start, safe_end
-                    )
+                    to_write = ">{}_{}_{}\n".format(index, safe_start, safe_end)
                     to_write += seq + "\n"
                     fa.write(to_write)
 
