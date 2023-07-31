@@ -13,3 +13,5 @@ data/positive.p
 
 analysis/__pycache__
 analysis/.ipynb_checkpoints
+analysis/results/bed_files/REST
+analysis/results/bed_files/NANOG
