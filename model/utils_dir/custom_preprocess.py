@@ -115,7 +115,10 @@ def create_dataset(param: ProcessInput):
     ):
         for r in bed_list:
             # Maximum sequence length of 512
-            _seq = chrom2seq[r.chrom][r.start + 250 : r.stop - 251]
+            # _seq = chrom2seq[r.chrom][r.start + 250 : r.stop - 251]
+            if (r.stop - r.start) > 512:
+                sys.exit("Sequence length greater than maximum of 512 detected.")
+            _seq = chrom2seq[r.chrom][r.start : r.stop]
             kmerized = seq2kmer(str(_seq), K)
             data_list.append(kmerized)
             # Insert the Label into the Approriate List
