@@ -185,33 +185,6 @@ def evaluate():
     num_labels = metadata["num_labels"]
     id2label = {v: k for k, v in label2id.items()}
 
-    # model = transformers.AutoModelForSequenceClassification.from_pretrained(
-    #    model_args.dnabert_path,
-    #    cache_dir=None,
-    #   num_labels=num_labels,
-    #    trust_remote_code=True,
-    #    id2label=id2label,
-    #    label2id=label2id,
-    # )
-    # inference_model = PeftModel.from_pretrained(model, model_args.peft_path)
-
-    # data_collator = DataCollatorForSupervisedDataset(tokenizer=tokenizer)
-
-    # trainer = CustomTrainer(
-    #    model=inference_model,
-    #    args=test_args,
-    #    tokenizer=tokenizer,
-    #    train_dataset=test_dataset,  # using this so custom loss function from train used.
-    #    eval_dataset=complete_dataset,
-    #    data_collator=data_collator,
-    #    compute_metrics=compute_final_metrics,
-    # )
-
-    # pos_metrics = trainer.evaluate(eval_dataset=complete_dataset)
-    # os.makedirs(test_args.output_dir, exist_ok=True)
-    # with open(os.path.join(test_args.output_dir, "pos_eval_results.json"), "w") as f:
-    #    json.dump(pos_metrics, f)
-
     model2 = transformers.AutoModelForSequenceClassification.from_pretrained(
         model_args.dnabert_path,
         cache_dir=None,

@@ -1,8 +1,11 @@
-#SBATCH
-#SBATCH
-#SBATCH
-#SBATCH
+# Author: Pranav Mahableshwarkar
+# Last Modified: 08-02-2021
+# Description: This script is used to generate the dataset for the DNABERT-Enhancer model.
 
+#SBATCH
+#SBATCH
+#SBATCH
+#SBATCH
 
 DATA_PATH=""
 KMER=6

@@ -15,3 +15,4 @@ analysis/__pycache__
 analysis/.ipynb_checkpoints
 analysis/results/bed_files/REST
 analysis/results/bed_files/NANOG
+analysis/results/fimo/negative

@@ -1,3 +1,8 @@
+# Author: Pranav Mahableshwarkar
+# Last Modified: 08-02-2021
+# Description: Generates the TSV files that are inputs for the DNABERT model.
+# Citation: DNABERT
+
 import pandas as pd
 import numpy as np
 import sys
@@ -79,6 +84,8 @@ def generate_tsv(sequences, labels, tsv_filename):
 def create_dataset(param: ProcessInput):
     """
     Generate the kmer-ized dataset in preparation of model training.
+    Input: BED files of positive and negative binding sites, FASTA file of the genome, and kmer length.
+    Output: TSV file of sequences and labels.
     """
     pos_bed_file, neg_bed_file, fasta, K, results_dir = (
         param.pos_bed,
@@ -193,7 +200,7 @@ def create_single_tsv(param: SingleInput):
 
     for r in beds:
         # Maximum sequence length of 512
-        _seq = chrom2seq[r.chrom][r.start + 250 : r.stop - 251]
+        _seq = chrom2seq[r.chrom][r.start : r.stop]
         kmerized = seq2kmer(str(_seq), K)
         data_list.append(kmerized)
         # Insert the Label into the Approriate List

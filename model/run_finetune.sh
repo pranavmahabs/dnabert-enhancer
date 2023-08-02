@@ -3,18 +3,24 @@
 #SBATCH -o myjob.out
 #SBATCH -e myjob.err
 
+# Author: Pranav Mahableshwarkar
+# Last Modified: 08-02-2021
+# Description: Script to fine-tune the model on the balanced dataset.
+
 LABELJSON="labels.json"
 MODEL_PATH="pretrained_6mer/"
 
+# Edit these file-paths to point to the correct data and output directories.
 DATA_PATH="../data/balanced_data/"
 OUTPATH="../output/semi-balanced/"
 PICKLE="../data/balanced_data/supervised_dataset.p"
 NUM_GPUS=4
 
-# Command to be executed with the --normal flag
-    # Add your normal command here
-source myconda
-mamba activate learning
+# Code to activate conda environment - this can either be done through conda or mamba. 
+# source myconda
+# mamba activate learning
+
+# Code to fine-tune the model.
 LOCAL_RANK=$(seq 0 $((NUM_GPUS - 1))) CUDA_VISIBLE_DEVICE=$(seq 0 $((NUM_GPUS - 1))) \
 torchrun --nproc_per_node $NUM_GPUS model_src/train.py \
         --model_config "dna6" \

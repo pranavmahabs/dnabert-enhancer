@@ -1,3 +1,7 @@
+# Author: Pranav Mahableshwarkar
+# Last Modified: 08-02-2021
+# Description: This file is a modified version of the original data file from the DNABERT repository.
+
 import csv
 import sys
 import pickle
@@ -20,8 +24,8 @@ from transformer_src.dna_tokenizer import (
 )
 
 
-# TODO: Reimplement to reflect the dataset for DNABERT-1
-class SupervisedDataset(Dataset):
+# write comments for this function  # TODO
+class SupervisedDataset(Dataset):  # TODO
     """Dataset for supervised fine-tuning."""
 
     def __init__(
@@ -30,6 +34,12 @@ class SupervisedDataset(Dataset):
         tokenizer: transformers.PreTrainedTokenizer,
         kmer: int = 6,
     ):
+        """
+        args:
+        - data_path: path to the data file.
+        - tokenizer: tokenizer for the model.
+        - kmer: k-mer for input sequence. Must be 3, 4, 5, or 6.
+        """
         assert kmer in [3, 4, 5, 6], "kmer must be 3, 4, 5, or 6"
         super(SupervisedDataset, self).__init__()
 
@@ -50,10 +60,6 @@ class SupervisedDataset(Dataset):
             raise ValueError("Data format not supported.")
 
         if kmer != -1:
-            # only write file on the first process
-            # if torch.distributed.get_rank() not in [0, -1]:
-            #     torch.distributed.barrier()
-
             print(f"Tokenizing input with {kmer}-mer as input...")
             with open(data_path, "r", newline="\n") as file:
                 reader = csv.reader(file, delimiter="\t")
@@ -66,8 +72,6 @@ class SupervisedDataset(Dataset):
             texts = np.asarray(texts)
             labels = texts[:, 1]
             texts = list(texts[:, 0])
-            # if torch.distributed.get_rank() == 0:
-            #     torch.distributed.barrier()
 
         output = tokenizer(
             texts,
@@ -80,8 +84,10 @@ class SupervisedDataset(Dataset):
         self.input_ids = output["input_ids"]
         self.attention_mask = output["attention_mask"]
         self.labels = labels.astype(np.int8)
+        # EDIT HERE for LABEL TRANSFORMATION
         if -1 in self.labels:
             self.labels += 1
+        # EDIT ABOVE for LABEL TRANSFORMATION
         self.num_labels = len(set(self.labels))
 
     def __len__(self):
@@ -91,6 +97,9 @@ class SupervisedDataset(Dataset):
         return dict(input_ids=self.input_ids[i], labels=self.labels[i])
 
     def getweights(self):
+        """
+        Returns the weights for each class in the dataset.
+        """
         unique_labels = list(set(self.labels))
         counts = []
         for label in unique_labels:
@@ -122,6 +131,9 @@ class DataCollatorForSupervisedDataset(object):
 
 
 def pickle_dataset(config, file_base):
+    """
+    Pickles the dataset for faster loading.
+    """
     tokenizer = DNATokenizer(
         vocab_file=PRETRAINED_VOCAB_FILES_MAP["vocab_file"][config],
         do_lower_case=PRETRAINED_INIT_CONFIGURATION[config]["do_lower_case"],

@@ -1,4 +1,6 @@
-## DNABERT-2/DNABERT Implementation Helped with this Code.
+# Author: Pranav Mahableshwarkar
+# Last Modified: 08-02-2021
+# Description: This file contains the code for the DNABERT-Enhancer fine-tuning.
 
 import os
 import csv
@@ -31,8 +33,6 @@ from dna_tokenizer import (
     PRETRAINED_POSITIONAL_EMBEDDINGS_SIZES,
     VOCAB_KMER,
 )
-
-CLASS_WEIGHTS = []
 
 
 @dataclass
@@ -168,10 +168,13 @@ class CustomTrainer(transformers.Trainer):
 
 """
 Manually calculate the accuracy, f1, matthews_correlation, precision, recall with sklearn.
+
+FEEL FREE TO EDIT THE METRICS HERE TO SUIT YOUR NEEDS.
 """
 
 
 def calculate_metric_with_sklearn(logits: np.ndarray, labels: np.ndarray):
+    """Metrics used during validation."""
     predictions = np.argmax(logits, axis=-1)
     return {
         "accuracy": sklearn.metrics.accuracy_score(labels, predictions),
@@ -195,6 +198,7 @@ def calculate_metric_with_sklearn(logits: np.ndarray, labels: np.ndarray):
 
 
 def compute_auc_fpr_thresholds(logits, labels):
+    """Metrics used during FINAL model evaluation."""
     ## class 0
     [fprs0, tprs0, thrs0] = sklearn.metrics.roc_curve((labels == 0), logits[:, 0])
     sort_ix = np.argsort(np.abs(fprs0 - 0.1))
