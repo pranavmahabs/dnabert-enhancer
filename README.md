@@ -56,4 +56,12 @@ Fill out the labels.json file following the same format as the template. Make su
 
 Unlike classic fine-tuning, DNABERT-Enhancer used LoRA (Low Rank Adaptation for Language Models). Instead of training all 90 million model parameters in the pre-trained model, this strategy uses Peft to place matrices between transformer layers and trains those instead. In my case, I had less than 5 million trainable parameters using this approach. 
 
-Note on GPUS: When I trained the model, I used 4 P100 NVIDIA GPUs allocating 120GB memory for each. Please keep this in mind when setting your batch_size for training and evaluation. 
+Open the fine-tuning script and enter the data-paths. Also enter your desired output directory. Make sure to choose a new directory as this will overwrite results from a previous successful run. **Note on GPUS**: When I trained the model, I used 4 NVIDIA TESLA P100 GPUs allocating 120GB memory for each. Please keep this in mind when setting your batch_size for training and evaluation. 
+
+The following, amongst other outputs, will be produced in the output directory. There will be THREE (can be changed) models saved, each with separate outputs of the following. It is up to you to choose which one you think is the best. 
+
+* **`eval_results.json`**: Contains all of your metrics chosen for model evaluation. Only will be produced for the model with the lowest loss (will not be computed for each of the three best models).
+* **`trainer_state.json`**: Contains all of the validation loss information at each step of the model in addition to metrics calculated at each step. 
+* **Other Files**: The other files that are output can be used to perform the evaluation step. 
+
+If you use the same parameters that are currently in the files, the training with 400000 samples took around 8 hours. While it is certainly possible to not use LoRA, it will make training the model infeasible with the sheer number of samples necessary to train the model. 
