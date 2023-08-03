@@ -95,3 +95,35 @@ The following, amongst other outputs, will be produced in the output directory. 
 * **Other Files**: The other files that are output can be used to perform the evaluation step. 
 
 If you use the same parameters that are currently in the files, the training with 400000 samples took around 8 hours. While it is certainly possible to not use LoRA, it will make training the model infeasible with the sheer number of samples necessary to train the model. 
+
+
+## Evaluation and Prediction
+Prediction is handled in DNABERT-Enhancer using `run_evaluate.sh` in the same model directory. Unlike training, it is only run on **one** GPU. To run the prediction, you will need to fill in the following:
+
+* `MODEL_PATH`: The path to your DNABERT-6.
+* `PEFT_PATH`: The path to your fine-tuned model - this will be somewhere in your output directory. Feel free to see what this will look like in `output/best_berten_718/` (though some outputs have been removed there).
+* `PICKLE`: The path to your `evaluate.p` file. 
+
+This script is only configured to run on the `evaluate.p` file. Internally, the pickle file stores a dictionary that contains the datasets for testing and the positive  dataset. If you desire a different set to be run, you can add this to the pickle file in your `custom_preprocess.py`. Running the evaluation script should take around 15-20 minutes on around 30000 samples.
+
+```bash
+$ sbatch run_evaluate.sh --gres=gpu:p100:1 --cpus-per-task=16 --mem=120g --time=08:00:00
+```
+
+These are the following outputs:
+
+* `eval_results.json`: It will rerun the evaluation that is performed at the end of the train function (contains AUCs, FPR Thresholds).
+* `atten.npy`: The normalized average attention scores for every single provided sequence. This is a numpy array of size (pos_data_len, seq_len)
+* `unnorm_atten.npy`: The unnormalized average attention scores for every single provided positive sequence.
+* `head_atten.npy`: This is the normalized average attention score for every single for every sequence. This is a numpy array with dims (pos_data_len x 12 x seq_len)
+* `pred_results.npy`: The logit scores for each of the classes - **not** the predicted labels. This is a numpy array of size (pos_data_len, num_labels).
+
+These outputs can be fed into downstream analysis tasks.
+
+## Downstream Analysis
+### Enhancer Explore
+The `enhancer_explore.ipynb` in the `analysis` folder provides a sample analysis pipeline on how to process and analyze the aforementioned numpy arrays that are produced in evaluation. Please note that some utility functions are hidden in `explore_utils.py` to decrease the size of the notebook. In particular, some of the plotting functions for the bar graphs are included there. 
+
+Note that I 
+
+### Attention Explore
