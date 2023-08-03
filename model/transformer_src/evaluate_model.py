@@ -111,6 +111,7 @@ def process_scores(attention_scores, kmer):
         scores[index] = real_scores
     return scores
 
+# def process_scores_vectorized(attention_scores, kmer):
 
 def process_multi_score(attention_scores, kmer):
     scores = np.zeros(
@@ -211,6 +212,7 @@ def evaluate():
     score_len = 496
     # score_len = len(complete_dataset.input_ids[0]) - data_args.kmer + 2  # should be 496
     single_attentions = np.zeros((len(complete_dataset), score_len))
+    unnormed_attentions = np.zeros((len(complete_dataset), score_len))
     pred_results = np.zeros((len(complete_dataset), num_labels))
     multi_attentions = np.zeros((len(complete_dataset), 12, score_len))
     true_labels = np.zeros(len(complete_dataset))
@@ -232,6 +234,9 @@ def evaluate():
             single_attentions[
                 index * batch_size : index * batch_size + len(input_ids), :
             ] = single_attn
+            # unnormed_attentions[
+            #     index * batch_size : index * batch_size + len(input_ids), :
+            # ]
             multi_attentions[
                 index * batch_size : index * batch_size + len(input_ids), :, :
             ] = multi_attn
