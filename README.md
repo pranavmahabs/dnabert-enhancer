@@ -14,6 +14,13 @@ $ conda activate dnabert-enhancer
 $ pip install -r requirements.txt
 ```
 
+### Installing DNABERT-6
+DNABERT-Enhancer is fine-tuned model of [DNABERT](https://github.com/jerryji1993/DNABERT/tree/master). DNABERT supports four different tokenizations of DNA (DNABERT-3,4,5 and 6). This model uses DNABERT-6.
+
+You can download the pre-trained model [here](https://drive.google.com/file/d/1BJjqb5Dl2lNMg2warsFQ0-Xvn1xxfFXC/view).
+
+Once you make this download, you will see 5 files present. All you need is `pytorch_model.bin`. Please drag and drop this file into `model/pretrained_6mer` as the other four (much smaller files) are already present in that directory. 
+
 ## Dataset
 
 In my training of DNABERT-Enhancer, I utilized around 360000 negative samples (noise from the genome) and around 12000 samples for each of my positive classes. This extreme imbalance is necessary for the model to learn what sequences are truly unique to the enhancers. (Note: the loss function accounts for class imbalance, see `CustomTrainer` in `model/transformer_src/train.py`).
@@ -22,7 +29,7 @@ You will need:
 
 * `positive.bed`: A BED file containing all the BED-formatted information for positive samples. Depending on your preprocessing, the fourth, fifth, etc. columns should allow you to determine the label.
 * `negative.bed`: A BED file containing all the BED-formatted information for negative samples. 
-* `genome.ga`: You will need to a provide a genome fa and fai file (i.e. hg38.fa and hg38.fa.fai)
+* `genome.fa`: You will need to a provide a genome fa and fai file (i.e. hg38.fa and hg38.fa.fai)
 
 It is highly recommended that your dataset for positive and negative samples for the entire genome as the data is set up to be split based on chromosome. If you want to a different split that can be done below.
 
@@ -36,7 +43,13 @@ Please be aware of **lines 87-89** where I have included a label transformation 
 
 **Step Two: `create_dataset.sh`**
 
-Open this Shell script in `model/` and enter the appropriate information (location of your data directory and the path for your genome FASTA file). These are the expected outputs:
+Open this Shell script in `model/` and enter the appropriate information (location of your data directory and the path for your genome FASTA file). 
+
+```bash
+$ sbatch create_dataset.sh --cpus-per-task=24 --time=08:00:00 --mem=40g
+```
+
+These are the expected outputs:
 
 * **TSV Files:** K-merized sequence files that contain a sequence column and label column. There will be four of these files: train.tsv, val.tsv, test.tsv, and positive.tsv. `positive.tsv` contains all of the samples in positive.bed with their labels. 
 * **supervised_dataset.p**: The pickle file for *fine-tuning*. This contains the Supervised Datasets from the training set, the validation set, and the testing set.
@@ -52,11 +65,28 @@ Currently the training script calculates AUC scores for classes 0 and 2 during v
 
 Fill out the labels.json file following the same format as the template. Make sure that this is accurate.
 
+```json
+{
+    "metadata": {
+        "num_labels" : 3
+    },
+    "label2id": {
+        "Poised Enhancer" : 0,
+        "Noise" : 1,
+        "Active Enhancer" : 2
+    }
+}
+```
+
 **Step Three: `run_finetune.sh`**
 
 Unlike classic fine-tuning, DNABERT-Enhancer used LoRA (Low Rank Adaptation for Language Models). Instead of training all 90 million model parameters in the pre-trained model, this strategy uses Peft to place matrices between transformer layers and trains those instead. In my case, I had less than 5 million trainable parameters using this approach. 
 
-Open the fine-tuning script and enter the data-paths. Also enter your desired output directory. Make sure to choose a new directory as this will overwrite results from a previous successful run. **Note on GPUS**: When I trained the model, I used 4 NVIDIA TESLA P100 GPUs allocating 120GB memory for each. Please keep this in mind when setting your batch_size for training and evaluation. 
+Open the fine-tuning script and enter the data-paths. Additionally, fell free to change any of the hyperparameters that are currently sit to fit your model needs. Enter your desired output directory. Make sure to choose a new directory as this will overwrite results from a previous successful run. **Note on GPUS**: When I trained the model, I used 4 NVIDIA TESLA P100 GPUs allocating 120GB memory for each. Please keep this in mind when setting your batch_size for training and evaluation. 
+
+```bash
+$ sbatch run_finetune.sh --gres=gpu:p100:4 --time=32:00:00 --mem=120g --cpus-per-task=16
+```
 
 The following, amongst other outputs, will be produced in the output directory. There will be THREE (can be changed) models saved, each with separate outputs of the following. It is up to you to choose which one you think is the best. 
 
