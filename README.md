@@ -124,6 +124,17 @@ These outputs can be fed into downstream analysis tasks.
 ### Enhancer Explore
 The `enhancer_explore.ipynb` in the `analysis` folder provides a sample analysis pipeline on how to process and analyze the aforementioned numpy arrays that are produced in evaluation. Please note that some utility functions are hidden in `explore_utils.py` to decrease the size of the notebook. In particular, some of the plotting functions for the bar graphs are included there. 
 
-Note that I 
+Note that a lot of my analysis involves specific comparison/BED files that are included in the Git Repo.
 
 ### Attention Explore
+This is certainly the trickier explore notebook - and leaves more preference to the user. When you run an evaluation/prediction with `run_evaluate.sh`, there are series of resulting numpy arrays that are produced. The attention scores and the ground labels are read in. 
+
+Ultimately, the attention analysis pipeline is up to your own desired analysis goals. In the current version, the following is present:
+
+* Average Attention plots for sequences in each category of enhancers
+* Random plotting of specific samples to visualize varying attention plots
+* Sequence extraction of high attention regions from the genome (single and multi-head available). These sequences can be fed into FIMO to perform motif enrichment (as seen in `enhancer_explore.ipynb`).
+
+**Motif Specific Enrichment Plots**
+
+An understandable application of these attention plots is visualizing attention scores in motif regions and proximal areas. Right now, `generate_story` does this alongside `intersect.sh` in `analysis/results/bed_files/`. Note how indices are used throughout BOTH of these exploration notebooks to ensure that the proper sequence and regions are analyzed.
