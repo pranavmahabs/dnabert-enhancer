@@ -183,7 +183,7 @@ def create_dataset(param: ProcessInput):
         generate_tsv(data, label, results_dir + filename)
 
 
-def create_single_tsv(param: SingleInput):
+def create_single_tsv(param: SingleInput, name):
     bed_file, fasta, K, results_dir = (
         param.bed,
         param.fasta,
@@ -210,7 +210,7 @@ def create_single_tsv(param: SingleInput):
             _k = 1
         label_list.append(_k)
 
-    generate_tsv(data_list, label_list, results_dir + "positive.tsv")
+    generate_tsv(data_list, label_list, results_dir + name + ".tsv")
 
 
 if __name__ == "__main__":
@@ -232,16 +232,19 @@ if __name__ == "__main__":
         help="If you only want to convert ONE BED file to a TSV.",
     )
     parser.add_argument("--single-bed-file", required=False)
+    parser.add_argument("--single-name", required=False)
 
     args = parser.parse_args()
 
     if args.single_bed_file:
+        print("Generating a single TSV file for {}...".format(args.single_bed_file))
         param = SingleInput(
             args.single_bed_file, args.fast_file, args.k, args.results_folder
         )
-        create_single_tsv(param)
+        create_single_tsv(param, args.single_name)
 
     if args.negative_file and args.positive_file:
+        print("Generating the dataset...")
         param = ProcessInput(
             args.positive_file,
             args.negative_file,
