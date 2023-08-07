@@ -125,7 +125,7 @@ Prediction is handled in DNABERT-Enhancer using `run_evaluate.sh` in the same mo
 * `PEFT_PATH`: The path to your fine-tuned model - this will be somewhere in your output directory. Feel free to see what this will look like in `output/best_berten_718/` (though some outputs have been removed there).
 * `PICKLE`: The path to your `evaluate.p` file. 
 
-This script is only configured to run on the `evaluate.p` file. Internally, the pickle file stores a dictionary that contains the datasets for testing and the positive  dataset. If you desire a different set to be run, you can add this to the pickle file in your `custom_preprocess.py`. Running the evaluation script should take around 15-20 minutes on around 30000 samples.
+This script is configured to run on the `evaluate.p` file. Internally, the pickle file stores a dictionary that contains the datasets for testing and the positive  dataset. If you want to run evaluation again, make sure to include the following flag: `--re_eval True` to your shell script. **However**, if you only want to run on a single file and get attention scores/logits, do **not** include this flag and provide the path to your desired pickle file. Running the evaluation script should take around 15-20 minutes on around 30000 samples.
 
 ```bash
 $ sbatch run_evaluate.sh --gres=gpu:p100:1 --cpus-per-task=16 --mem=120g --time=08:00:00
@@ -140,6 +140,10 @@ These are the following outputs:
 * `pred_results.npy`: The logit scores for each of the classes - **not** the predicted labels. This is a numpy array of size (pos_data_len, num_labels).
 
 These outputs can be fed into downstream analysis tasks.
+
+### Running Evaluation on Custom Sets
+
+
 
 ## Downstream Analysis
 ### Enhancer Explore

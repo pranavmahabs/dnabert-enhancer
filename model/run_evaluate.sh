@@ -29,4 +29,8 @@ python3 model_src/evaluate_model.py \
         --output_dir $OUTPATH \
         --overwrite_output_dir True \
         --log_level info \
+        --re_eval True \
+
+# If you are using a pickle file that contains a test dataset,
+# then make sure to include the --re_eval True setting.
 
