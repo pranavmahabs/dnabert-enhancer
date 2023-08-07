@@ -81,7 +81,22 @@ def generate_tsv(sequences, labels, tsv_filename):
         tsv_file.write(tsv_content)
 
 
-def create_dataset(param: ProcessInput):
+def get_positive_labels(bed_row):
+    """
+    Return the positive labels for the binding sites.
+    """
+    # Default Label for Noise
+    if len(bed_row) == 3:
+        return 0
+    # Determine Positive Label Based on the BED File
+    # 1 for AE and -1 for PE
+    _k = int(bed_row[3]) - int(bed_row[4])
+    if _k == 0:
+        _k = 1
+    return _k
+
+
+def create_dataset(param: ProcessInput, custom_label_function=get_positive_labels):
     """
     Generate the kmer-ized dataset in preparation of model training.
     Input: BED files of positive and negative binding sites, FASTA file of the genome, and kmer length.
@@ -122,17 +137,14 @@ def create_dataset(param: ProcessInput):
     ):
         for r in bed_list:
             # Maximum sequence length of 512
-            # _seq = chrom2seq[r.chrom][r.start + 250 : r.stop - 251]
-            if (r.stop - r.start) > 512:
-                sys.exit("Sequence length greater than maximum of 512 detected.")
-            _seq = chrom2seq[r.chrom][r.start : r.stop]
+            _seq = chrom2seq[r.chrom][r.start + 250 : r.stop - 251]
+            # if (r.stop - r.start) > 512:
+            #     sys.exit("Sequence length greater than maximum of 512 detected.")
+            # _seq = chrom2seq[r.chrom][r.start : r.stop]
             kmerized = seq2kmer(str(_seq), K)
             data_list.append(kmerized)
             # Insert the Label into the Approriate List
-            # 1:AE - Enhancers with H3K27AC; -1:PE, Enhancers only with H3K4me1
-            _k = int(r[3]) - int(r[4])
-            if _k == 0:
-                _k = 1
+            _k = custom_label_function(r)
             label_list.append(_k)
 
     print(len(pos_train_data))
@@ -183,7 +195,7 @@ def create_dataset(param: ProcessInput):
         generate_tsv(data, label, results_dir + filename)
 
 
-def create_single_tsv(param: SingleInput, name):
+def create_single_tsv(param: SingleInput, name, label_function=get_positive_labels):
     bed_file, fasta, K, results_dir = (
         param.bed,
         param.fasta,
@@ -205,12 +217,18 @@ def create_single_tsv(param: SingleInput, name):
         data_list.append(kmerized)
         # Insert the Label into the Approriate List
         # 1:AE - Enhancers with H3K27AC; -1:PE, Enhancers only with H3K4me1
-        _k = int(r[3]) - int(r[4])
-        if _k == 0:
-            _k = 1
+        _k = label_function(r)
         label_list.append(_k)
 
     generate_tsv(data_list, label_list, results_dir + name + ".tsv")
+
+
+def custom_label_function(r):
+    ##
+    # Edit this function to change the label function. Otherwise it will default to
+    # the get_positive_labels function which is the default for the other functions.
+    ##
+    return 0
 
 
 if __name__ == "__main__":
@@ -241,7 +259,9 @@ if __name__ == "__main__":
         param = SingleInput(
             args.single_bed_file, args.fast_file, args.k, args.results_folder
         )
-        create_single_tsv(param, args.single_name)
+        create_single_tsv(
+            param, args.single_name, custom_label_function=get_positive_labels
+        )
 
     if args.negative_file and args.positive_file:
         print("Generating the dataset...")
@@ -252,4 +272,4 @@ if __name__ == "__main__":
             args.k,
             args.results_folder,
         )
-        create_dataset(param)
+        create_dataset(param, custom_label_function=get_positive_labels)
