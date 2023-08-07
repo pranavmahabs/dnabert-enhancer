@@ -81,17 +81,16 @@ def generate_tsv(sequences, labels, tsv_filename):
         tsv_file.write(tsv_content)
 
 
-def get_positive_labels(bed_row):
+def get_positive_labels(bed_interval):
     """
     Return the positive labels for the binding sites.
     """
     # Default Label for Noise
-    print(len(bed_row))
-    if len(bed_row) < 4:
+    if len(bed_interval.fields) == 3:
         return 0
     # Determine Positive Label Based on the BED File
     # 1 for AE and -1 for PE
-    _k = int(bed_row[3]) - int(bed_row[4])
+    _k = int(bed_interval[3]) - int(bed_interval[4])
     if _k == 0:
         _k = 1
     return _k

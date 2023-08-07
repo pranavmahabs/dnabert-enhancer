@@ -37,9 +37,9 @@ It is highly recommended that your dataset for positive and negative samples for
 
 **Step One: Setup Python Scripts**
 
-You will need to update `custom_preprocess.py` and `data_dnabert.py` in `model/transformer_src/` to work with your labeling scheme - hence the name custom_preprocess. Lines 126-130 are how I handle labeling for my positive class. In particular, I use information in each row of my BED file to assign the label to that sample. If you are using binary classification then the positive label can always be 1. You will notice that negative samples are automatically set with a label of 0.
+You will need to update `custom_preprocess.py` and `data_dnabert.py` in `model/transformer_src/` to work with your labeling scheme - hence the name custom_preprocess. In particular, I use information in each row of my BED file to assign the label to that sample. To do this I use a labeling function that uses the values in the BED File. This is `get_positive_labels` for my dataset but you can fill in the `custom_label_function` and pass it in to the files that either create a dataset or a single TSV file. If you are using binary classification then the positive label can always be 1. You will notice that negative samples are automatically set with a label of 0.
 
-Please be aware of **lines 87-89** where I have included a label transformation specific to my model. Feel free to transform your labels here as well - though if none of your labels are set to -1, this should not be an issue.
+Please be aware of **lines 87-89** in `data_dnabert.py` where I have included a label transformation specific to my model. Feel free to transform your labels here as well - though if none of your labels are set to -1, this should not be an issue.
 
 **Step Two: `create_dataset.sh`**
 
@@ -143,7 +143,7 @@ These outputs can be fed into downstream analysis tasks.
 
 ### Running Evaluation on Custom Sets
 
-
+If you generated a single tsv in the preprocess pipeline, then that pickle file - which stores a dictionary - would not have a key-value pair for 'test'. The file should automatically detect this. It is important to also mark the flag `--re_eval False`. Then, all you have to do is provide the file-path and output path on the top of evaluate script and you are good to go.
 
 ## Downstream Analysis
 ### Enhancer Explore

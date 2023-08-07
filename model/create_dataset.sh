@@ -29,5 +29,5 @@ python3 utils_dir/custom_preprocess.py \
 
 # 3. Generate the Pickle Files that Contain the Dataset
 
-python3 model_src/data_dnabert.py --pickle True --config $CONFIG --file_base $DATA_PATH
+python3 model_src/data_dnabert.py --pickle_dataset True --config $CONFIG --file_base $DATA_PATH
 
