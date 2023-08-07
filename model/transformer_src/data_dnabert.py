@@ -182,7 +182,9 @@ if __name__ == "__main__":
     args.add_argument(
         "--file_base", type=str, default="data/processed/", help="file base"
     )
-    args.add_argument("--pickle", type=bool, default=True, help="pickle dataset")
+    args.add_argument(
+        "--pickle_dataset", type=bool, default=True, help="pickle dataset"
+    )
     args.add_argument(
         "--single_file", type=str, default="data/processed/train.tsv", help="data path"
     )
@@ -191,5 +193,5 @@ if __name__ == "__main__":
 
     if args.pickle:
         pickle_dataset(args.config, args.file_base)
-    else:
+    elif args.single_file:
         pickle_single(args.config, args.file_base, args.single_file, args.single_name)

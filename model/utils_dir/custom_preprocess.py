@@ -86,7 +86,7 @@ def get_positive_labels(bed_row):
     Return the positive labels for the binding sites.
     """
     # Default Label for Noise
-    if len(bed_row) == 3:
+    if len(bed_row) < 5:
         return 0
     # Determine Positive Label Based on the BED File
     # 1 for AE and -1 for PE
