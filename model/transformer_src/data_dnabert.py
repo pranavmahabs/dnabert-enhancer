@@ -190,7 +190,7 @@ if __name__ == "__main__":
     args.add_argument("--single_name", type=str, default="train", help="data name")
     args = args.parse_args()
 
-    if args.pickle:
+    if args.pickle_dataset:
         pickle_dataset(args.config, args.file_base)
     elif args.single_file:
         print("Pickling single file for {}...".format(args.single_name))
