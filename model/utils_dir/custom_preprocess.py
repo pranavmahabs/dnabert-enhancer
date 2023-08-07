@@ -259,9 +259,7 @@ if __name__ == "__main__":
         param = SingleInput(
             args.single_bed_file, args.fast_file, args.k, args.results_folder
         )
-        create_single_tsv(
-            param, args.single_name, custom_label_function=get_positive_labels
-        )
+        create_single_tsv(param, args.single_name, label_function=get_positive_labels)
 
     if args.negative_file and args.positive_file:
         print("Generating the dataset...")
