@@ -16,7 +16,7 @@ import sklearn
 import numpy as np
 from torch.utils.data import Dataset
 
-from transformer_src.dna_tokenizer import (
+from dna_tokenizer import (
     DNATokenizer,
     PRETRAINED_INIT_CONFIGURATION,
     PRETRAINED_VOCAB_FILES_MAP,

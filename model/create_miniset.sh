@@ -7,27 +7,31 @@
 #SBATCH
 #SBATCH
 
-DATA_PATH=""
+DATA_PATH="../data"
 KMER=6
 CONFIG="dna6" # This must MATCH the KMER. 
-HG_FASTA=""
+HG_FASTA="../../../common/genomes/hg38/hg38.fa"
+NAME="neg_sample"
 
 # 1. Activate a conda/mamba environment
-# source myconda
-# mamba activate <>
+#source myconda
+#mamba activate learning
 
 # 2. First Generate the TSV files using custom_process.py
+echo "Preprocessing and Creating TSV File"
 python3 utils_dir/custom_preprocess.py \
-    --generate-single-tsv \
-    --single-bed-file "../data/sample.bed" \
+    --generate-single-tsv True \
+    --single-bed-file "../data/negative_fullsample.bed" \
+    --single-name $NAME \
     --fast-file $HG_FASTA \
     --k $KMER \
     --results-folder $DATA_PATH \
 
 # 3. Generate the Pickle Files that Contain the Dataset
-python3 model_src/data_dnabert.py \
-    --single_file "../data/sample.bed" \
-    --single_name "sample" \
+echo "Generating pickle file"
+python3 transformer_src/data_dnabert.py \
+    --single_file "${NAME}.tsv" \
+    --single_name $NAME \
     --config $CONFIG \
     --file_base $DATA_PATH \
 
