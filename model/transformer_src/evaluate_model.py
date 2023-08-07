@@ -68,6 +68,7 @@ class TestingArguments(transformers.TrainingArguments):
     )
     per_device_eval_batch_size: int = field(default=1)
     seed: int = field(default=42)
+    re_eval: bool = field(default=False)
 
 
 def setup(rank, world_size):
@@ -81,37 +82,38 @@ def cleanup():
     torch.distributed.destroy_process_group()
 
 
+def process_scores_vectorized(attention_score, kmer):
+    """Same as process_scores but uses np for faster optimization"""
+    # (1, num_heads, seq_len, seq_len)
+    # Takes the sum of all heads at the first token
+    attn_score = [
+        float(attention_score[:, 0, i].sum())
+        for i in range(1, attention_score.shape[-1] - kmer + 2)
+    ]
+
+    for i in range(len(attn_score) - 1):
+        if attn_score[i + 1] == 0:
+            attn_score[i] = 0
+            break
+
+    counts = np.zeros([len(attn_score) + kmer - 1])
+    real_scores = np.zeros([len(attn_score) + kmer - 1])
+    for i, score in enumerate(attn_score):
+        for j in range(kmer):
+            counts[i + j] += 1.0
+            real_scores[i + j] += score
+    real_scores = real_scores / counts
+    unnormed_scores = real_scores.copy()
+    real_scores = real_scores / np.linalg.norm(real_scores)
+    return real_scores, unnormed_scores
+
+
 def process_scores(attention_scores, kmer):
-    softmax = torch.nn.Softmax(dim=1)
-    scores = np.zeros([attention_scores.shape[0], attention_scores.shape[-1]])
+    scores, unnormed_scores = np.apply_along_axis(
+        process_scores_vectorized, 1, attention_scores, kmer
+    )
+    return scores, unnormed_scores
 
-    # attention_scores: (batch_size, num_heads, seq_len, seq_len)
-    for index, attention_score in enumerate(attention_scores):
-        # (1, num_heads, seq_len, seq_len)
-        attn_score = []
-        for i in range(1, attention_score.shape[-1] - kmer + 2):
-            # sum (heads, 0, all_scores) -> 0: Beginning of Sentence Token
-            attn_score.append(float(attention_score[:, 0, i].sum()))
-
-        for i in range(len(attn_score) - 1):
-            if attn_score[i + 1] == 0:
-                attn_score[i] = 0
-                break
-
-        # attn_score[0] = 0
-        counts = np.zeros([len(attn_score) + kmer - 1])
-        real_scores = np.zeros([len(attn_score) + kmer - 1])
-        for i, score in enumerate(attn_score):
-            for j in range(kmer):
-                counts[i + j] += 1.0
-                real_scores[i + j] += score
-        real_scores = real_scores / counts
-        real_scores = real_scores / np.linalg.norm(real_scores)
-
-        scores[index] = real_scores
-    return scores
-
-# def process_scores_vectorized(attention_scores, kmer):
 
 def process_multi_score(attention_scores, kmer):
     scores = np.zeros(
@@ -172,8 +174,13 @@ def evaluate():
     with open(data_args.data_pickle, "rb") as handle:
         dataset = pickle.load(handle)
 
-    complete_dataset = dataset["positive"]
-    test_dataset = dataset["test"]
+    complete_dataset = dataset.get("positive", None)
+    if complete_dataset is None:
+        raise ValueError("No dataset found in the pickle file.")
+    if test_args.re_eval:
+        test_dataset = dataset.get("test", None)
+        if test_dataset is None:
+            raise ValueError("No test dataset found in the pickle file.")
 
     data_collator = DataCollatorForSupervisedDataset(tokenizer=tokenizer)
 
@@ -212,7 +219,7 @@ def evaluate():
     score_len = 496
     # score_len = len(complete_dataset.input_ids[0]) - data_args.kmer + 2  # should be 496
     single_attentions = np.zeros((len(complete_dataset), score_len))
-    unnormed_attentions = np.zeros((len(complete_dataset), score_len))
+    unnorm_attentions = np.zeros((len(complete_dataset), score_len))
     pred_results = np.zeros((len(complete_dataset), num_labels))
     multi_attentions = np.zeros((len(complete_dataset), 12, score_len))
     true_labels = np.zeros(len(complete_dataset))
@@ -229,18 +236,14 @@ def evaluate():
 
             # Save Attention Scores #
             out_attns = (outputs.attentions[-1]).cpu().numpy()
-            single_attn = process_scores(out_attns, data_args.kmer)
+            single_attn, unnormed_attn = process_scores(out_attns, data_args.kmer)
             multi_attn = process_multi_score(out_attns, data_args.kmer)
             single_attentions[
                 index * batch_size : index * batch_size + len(input_ids), :
             ] = single_attn
-            # unnormed_attentions[
-            #     index * batch_size : index * batch_size + len(input_ids), :
-            # ]
             multi_attentions[
                 index * batch_size : index * batch_size + len(input_ids), :, :
             ] = multi_attn
-
             # Save Logits #
             out_logits = outputs.logits.cpu().detach().numpy()
             pred_results[
@@ -252,9 +255,24 @@ def evaluate():
             ] = labels
 
     np.save(os.path.join(test_args.output_dir, "atten.npy"), single_attentions)
+    np.save(os.path.join(test_args.output_dir, "unnorm_atten.npy"), unnorm_attentions)
     np.save(os.path.join(test_args.output_dir, "pred_results.npy"), pred_results)
     np.save(os.path.join(test_args.output_dir, "heads_atten.npy"), multi_attentions)
     np.save(os.path.join(test_args.output_dir, "labels.npy"), true_labels)
+
+    if test_args.re_eval:
+        trainer = CustomTrainer(
+            model=inference_model,
+            args=test_args,
+            train_dataset=None,
+            eval_dataset=test_dataset,
+            tokenizer=tokenizer,
+            compute_metrics=compute_final_metrics,
+        )
+        results = trainer.evaluate(eval_dataset=test_dataset)
+        os.makedirs(test_args.output_dir, exist_ok=True)
+        with open(os.path.join(test_args.output_dir, "eval_results.json"), "w") as f:
+            json.dump(results, f)
 
 
 if __name__ == "__main__":

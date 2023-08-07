@@ -6,6 +6,7 @@ import csv
 import sys
 import pickle
 import logging
+import argparse
 from dataclasses import dataclass
 from typing import Dict, Sequence
 
@@ -146,7 +147,7 @@ def pickle_dataset(config, file_base):
         dataset = SupervisedDataset(tsv_file, tokenizer)
         to_dump[name] = dataset
 
-    positive_outfile = file_base + "positive.p"
+    positive_outfile = file_base + "evaluate.p"
     file = file_base + "positive.tsv"
     positive_dataset = SupervisedDataset(file, tokenizer)
     positive_dump = {"positive": positive_dataset, "test": to_dump["test"]}
@@ -158,7 +159,37 @@ def pickle_dataset(config, file_base):
         pickle.dump(positive_dump, handle2, protocol=pickle.HIGHEST_PROTOCOL)
 
 
+def pickle_single(config, file_base, file, name):
+    """
+    Pickles a single evaluation dataset for faster loading.
+    """
+    tokenizer = DNATokenizer(
+        vocab_file=PRETRAINED_VOCAB_FILES_MAP["vocab_file"][config],
+        do_lower_case=PRETRAINED_INIT_CONFIGURATION[config]["do_lower_case"],
+        max_len=PRETRAINED_POSITIONAL_EMBEDDINGS_SIZES[config],
+    )
+    positive_outfile = file_base + name + ".p"
+    positive_dataset = SupervisedDataset(file, tokenizer)
+    positive_dump = {"positive": positive_dataset}
+
+    with open(positive_outfile, "wb") as handle2:
+        pickle.dump(positive_dump, handle2, protocol=pickle.HIGHEST_PROTOCOL)
+
+
 if __name__ == "__main__":
-    config = sys.argv[1]
-    file_base = sys.argv[2]
-    pickle_dataset(config, file_base)
+    args = argparse.ArgumentParser()
+    args.add_argument("--config", type=str, default="dna5", help="config")
+    args.add_argument(
+        "--file_base", type=str, default="data/processed/", help="file base"
+    )
+    args.add_argument("--pickle", type=bool, default=True, help="pickle dataset")
+    args.add_argument(
+        "--single_file", type=str, default="data/processed/train.tsv", help="data path"
+    )
+    args.add_argument("--single_name", type=str, default="train", help="data name")
+    args = args.parse_args()
+
+    if args.pickle:
+        pickle_dataset(args.config, args.file_base)
+    else:
+        pickle_single(args.config, args.file_base, args.single_file, args.single_name)

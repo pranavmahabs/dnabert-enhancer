@@ -55,6 +55,27 @@ These are the expected outputs:
 * **supervised_dataset.p**: The pickle file for *fine-tuning*. This contains the Supervised Datasets from the training set, the validation set, and the testing set.
 * **evaluation.p:** The pickle file for *evaluation*. This contains the Supervised Datasets generated from the testing set and the positive set. The positive set is useful for evaluation.
 
+### Create Your Own Evaluation Dataset
+
+If you want to run a random BED file for evaluation on the model that is separate from the positive/dataset pickle files, you can do the following. Go to `create_miniset.sh` and edit the respective information. An example of the key area would look something like this:
+
+```bash
+# 2. First Generate the TSV files using custom_process.py
+python3 utils_dir/custom_preprocess.py \
+    --generate-single-tsv \
+    --single-bed-file "../data/sample.bed" \
+    --fast-file $HG_FASTA \
+    --k $KMER \
+    --results-folder $DATA_PATH \
+
+# 3. Generate the Pickle Files that Contain the Dataset
+python3 model_src/data_dnabert.py \
+    --single_file "../data/sample.bed" \
+    --single_name "sample" \
+    --config $CONFIG \
+    --file_base $DATA_PATH \
+
+```
 
 ## Fine-Tuning
 **Step One: Customize Metrics**
