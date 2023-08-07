@@ -25,8 +25,7 @@ from dna_tokenizer import (
 )
 
 
-# write comments for this function  # TODO
-class SupervisedDataset(Dataset):  # TODO
+class SupervisedDataset(Dataset):
     """Dataset for supervised fine-tuning."""
 
     def __init__(
@@ -194,4 +193,5 @@ if __name__ == "__main__":
     if args.pickle:
         pickle_dataset(args.config, args.file_base)
     elif args.single_file:
+        print("Pickling single file for {}...".format(args.single_name))
         pickle_single(args.config, args.file_base, args.single_file, args.single_name)
