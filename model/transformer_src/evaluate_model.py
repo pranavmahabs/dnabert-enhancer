@@ -110,9 +110,15 @@ def process_scores_vectorized(attention_score, kmer):
 
 
 def process_scores(attention_scores, kmer):
-    scores, unnormed_scores = np.apply_along_axis(
-        process_scores_vectorized, 1, attention_scores, kmer
-    )
+    num_samples = attention_scores.shape[0]
+    scores = np.zeros([attention_scores.shape[0], attention_scores.shape[-1]])
+    unnormed_scores = np.zeros([attention_scores.shape[0], attention_scores.shape[-1]])
+
+    for i in range(num_samples):
+        scores[i, :], unnormed_scores[i, :] = process_scores_vectorized(
+            attention_scores[i], kmer
+        )
+
     return scores, unnormed_scores
 
 
