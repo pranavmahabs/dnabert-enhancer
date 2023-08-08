@@ -82,43 +82,36 @@ def cleanup():
     torch.distributed.destroy_process_group()
 
 
-def process_scores_vectorized(attention_score, kmer):
-    """Same as process_scores but uses np for faster optimization"""
-    # (1, num_heads, seq_len, seq_len)
-    # Takes the sum of all heads at the first token
-    attn_score = [
-        float(attention_score[:, 0, i].sum())
-        for i in range(1, attention_score.shape[-1] - kmer + 2)
-    ]
-
-    for i in range(len(attn_score) - 1):
-        if attn_score[i + 1] == 0:
-            attn_score[i] = 0
-            break
-
-    counts = np.zeros([len(attn_score) + kmer - 1])
-    real_scores = np.zeros([len(attn_score) + kmer - 1])
-    for i, score in enumerate(attn_score):
-        for j in range(kmer):
-            counts[i + j] += 1.0
-            real_scores[i + j] += score
-    real_scores = real_scores / counts
-    unnormed_scores = real_scores.copy()
-    real_scores = real_scores / np.linalg.norm(real_scores)
-    return real_scores, unnormed_scores
-
-
 def process_scores(attention_scores, kmer):
-    num_samples = attention_scores.shape[0]
     scores = np.zeros([attention_scores.shape[0], attention_scores.shape[-1]])
-    unnormed_scores = np.zeros([attention_scores.shape[0], attention_scores.shape[-1]])
+    unnorm = np.zeros([attention_scores.shape[0], attention_scores.shape[-1]])
 
-    for i in range(num_samples):
-        scores[i, :], unnormed_scores[i, :] = process_scores_vectorized(
-            attention_scores[i], kmer
-        )
+    # attention_scores: (batch_size, num_heads, seq_len, seq_len)
+    for index, attention_score in enumerate(attention_scores):
+        # (1, num_heads, seq_len, seq_len)
+        attn_score = []
+        for i in range(1, attention_score.shape[-1] - kmer + 2):
+            # sum (heads, 0, all_scores) -> 0: Beginning of Sentence Token
+            attn_score.append(float(attention_score[:, 0, i].sum()))
 
-    return scores, unnormed_scores
+        for i in range(len(attn_score) - 1):
+            if attn_score[i + 1] == 0:
+                attn_score[i] = 0
+                break
+
+        # attn_score[0] = 0
+        counts = np.zeros([len(attn_score) + kmer - 1])
+        real_scores = np.zeros([len(attn_score) + kmer - 1])
+        for i, score in enumerate(attn_score):
+            for j in range(kmer):
+                counts[i + j] += 1.0
+                real_scores[i + j] += score
+        real_scores = real_scores / counts
+        unnorm[index] = real_scores
+        real_scores = real_scores / np.linalg.norm(real_scores)
+
+        scores[index] = real_scores
+    return scores
 
 
 def process_multi_score(attention_scores, kmer):
@@ -222,8 +215,9 @@ def evaluate():
         collate_fn=data_collator,
     )
 
-    score_len = 496
-    # score_len = len(complete_dataset.input_ids[0]) - data_args.kmer + 2  # should be 496
+    score_len = len(complete_dataset.input_ids[0])
+    if score_len != 496:
+        raise ValueError("Score Length is not 496")
     single_attentions = np.zeros((len(complete_dataset), score_len))
     unnorm_attentions = np.zeros((len(complete_dataset), score_len))
     pred_results = np.zeros((len(complete_dataset), num_labels))
