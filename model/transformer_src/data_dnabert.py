@@ -182,7 +182,7 @@ if __name__ == "__main__":
         "--file_base", type=str, default="data/processed/", help="file base"
     )
     args.add_argument(
-        "--pickle_dataset", type=bool, default=True, help="pickle dataset"
+        "--pickle_dataset", type=bool, default=False, help="pickle dataset"
     )
     args.add_argument(
         "--single_file", type=str, default="data/processed/train.tsv", help="data path"

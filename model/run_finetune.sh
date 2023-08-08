@@ -22,7 +22,7 @@ NUM_GPUS=4
 
 # Code to fine-tune the model.
 LOCAL_RANK=$(seq 0 $((NUM_GPUS - 1))) CUDA_VISIBLE_DEVICE=$(seq 0 $((NUM_GPUS - 1))) \
-torchrun --nproc_per_node $NUM_GPUS model_src/train.py \
+torchrun --nproc_per_node $NUM_GPUS transformer_src/train.py \
         --model_config "dna6" \
         --model_name_or_path $MODEL_PATH \
         --data_path  $DATA_PATH \

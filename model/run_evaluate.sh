@@ -8,15 +8,15 @@ MODEL_PATH="pretrained_6mer/"
 PEFT_PATH="../output/best_berten_718/"
 
 DATA_PATH="../data/"
-OUTPATH="../output/positive_evaulation/"
-PICKLE="../data/full_data_tsv/evaluate.p"
+OUTPATH="../output/negative_evaulation/"
+PICKLE="../data/neg_sample.p"
 
 # Command to be executed with the --normal flag
     # Add your normal command here
 # source myconda
 # mamba activate learning
  
-python3 model_src/evaluate_model.py \
+python3 transformer_src/evaluate_model.py \
         --model_config "dna6" \
         --dnabert_path $MODEL_PATH \
         --peft_path $PEFT_PATH \
@@ -29,7 +29,6 @@ python3 model_src/evaluate_model.py \
         --output_dir $OUTPATH \
         --overwrite_output_dir True \
         --log_level info \
-        --re_eval True \
 
 # If you are using a pickle file that contains a test dataset,
 # then make sure to include the --re_eval True setting.

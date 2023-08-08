@@ -212,7 +212,7 @@ def create_single_tsv(param: SingleInput, name, label_function=get_positive_labe
 
     for r in beds:
         # Maximum sequence length of 512
-        _seq = chrom2seq[r.chrom][r.start : r.stop]
+        _seq = chrom2seq[r.chrom][r.start + 250: r.stop - 251]
         kmerized = seq2kmer(str(_seq), K)
         data_list.append(kmerized)
         # Insert the Label into the Approriate List

@@ -7,7 +7,8 @@
 #SBATCH
 #SBATCH
 
-DATA_PATH="../data"
+# Make sure this path ends with a /
+DATA_PATH="../data/"
 KMER=6
 CONFIG="dna6" # This must MATCH the KMER. 
 HG_FASTA="../../../common/genomes/hg38/hg38.fa"
@@ -30,8 +31,7 @@ python3 utils_dir/custom_preprocess.py \
 # 3. Generate the Pickle Files that Contain the Dataset
 echo "Generating pickle file"
 python3 transformer_src/data_dnabert.py \
-    --single_file "${NAME}.tsv" \
+    --single_file "${DATA_PATH}${NAME}.tsv" \
     --single_name $NAME \
     --config $CONFIG \
     --file_base $DATA_PATH \
-
