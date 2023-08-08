@@ -111,7 +111,7 @@ def process_scores(attention_scores, kmer):
         real_scores = real_scores / np.linalg.norm(real_scores)
 
         scores[index] = real_scores
-    return scores
+    return scores, unnorm
 
 
 def process_multi_score(attention_scores, kmer):
