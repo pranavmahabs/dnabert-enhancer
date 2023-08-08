@@ -187,11 +187,14 @@ if __name__ == "__main__":
     args.add_argument(
         "--single_file", type=str, default="data/processed/train.tsv", help="data path"
     )
-    args.add_argument("--single_name", type=str, default="train", help="data name")
+    args.add_argument("--single_name", type=str, default=None, help="data name")
     args = args.parse_args()
 
-    if args.pickle_dataset:
+    print(args.single_file)
+
+    if args.pickle_dataset is True:
+        print("Pickling dataset...")
         pickle_dataset(args.config, args.file_base)
-    elif args.single_file:
+    elif args.single_file is not None:
         print("Pickling single file for {}...".format(args.single_name))
         pickle_single(args.config, args.file_base, args.single_file, args.single_name)
