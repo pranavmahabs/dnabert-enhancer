@@ -279,7 +279,6 @@ def evaluate():
             compute_metrics=compute_final_metrics,
         )
         results = trainer.evaluate(eval_dataset=test_dataset)
-        os.makedirs(test_args.output_dir, exist_ok=True)
         with open(os.path.join(test_args.output_dir, "eval_results.json"), "w") as f:
             json.dump(results, f)
 
