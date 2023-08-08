@@ -86,6 +86,7 @@ def process_scores_vectorized(attention_score, kmer):
     """Same as process_scores but uses np for faster optimization"""
     # (1, num_heads, seq_len, seq_len)
     # Takes the sum of all heads at the first token
+    print(attention_score.shape)
     attn_score = [
         float(attention_score[:, 0, i].sum())
         for i in range(1, attention_score.shape[-1] - kmer + 2)
@@ -241,6 +242,9 @@ def evaluate():
             single_attentions[
                 index * batch_size : index * batch_size + len(input_ids), :
             ] = single_attn
+            unnorm_attentions[
+                index * batch_size : index * batch_size + len(input_ids), :
+            ] = unnormed_attn
             multi_attentions[
                 index * batch_size : index * batch_size + len(input_ids), :, :
             ] = multi_attn
