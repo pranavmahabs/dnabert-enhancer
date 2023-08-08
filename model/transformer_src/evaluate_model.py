@@ -257,6 +257,12 @@ def evaluate():
                 index * batch_size : index * batch_size + len(input_ids)
             ] = labels
 
+    if not os.path.exists(test_args.output_dir):
+        os.makedirs(test_args.output_dir)
+        print(f"Directory '{test_args.output_dir}' created. Saving results now.")
+    else:
+        print(f"Directory '{test_args.output_dir}' already exists. Saving results now.")
+
     np.save(os.path.join(test_args.output_dir, "atten.npy"), single_attentions)
     np.save(os.path.join(test_args.output_dir, "unnorm_atten.npy"), unnorm_attentions)
     np.save(os.path.join(test_args.output_dir, "pred_results.npy"), pred_results)
