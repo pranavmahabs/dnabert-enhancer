@@ -7,10 +7,11 @@
 #SBATCH
 #SBATCH
 
-DATA_PATH=""
+# Make sure this path ends with a /
+DATA_PATH="../data/binary_data/"
 KMER=6
 CONFIG="dna6" # This must MATCH the KMER. 
-HG_FASTA=""
+HG_FASTA="../../../common/genomes/hg38/hg38.fa"
 
 ## 1. Activate a conda/mamba environment
 # source myconda
@@ -21,7 +22,7 @@ HG_FASTA=""
 python3 utils_dir/custom_preprocess.py \
     --positive-file "../data/positive.bed" \
     --negative-file "../data/negative.bed" \
-    --generate-single-tsv \
+    --generate-single-tsv True \
     --single-bed-file "../data/positive.bed" \
     --fast-file $HG_FASTA \
     --k $KMER \
@@ -29,5 +30,7 @@ python3 utils_dir/custom_preprocess.py \
 
 # 3. Generate the Pickle Files that Contain the Dataset
 
-python3 model_src/data_dnabert.py --pickle_dataset True --config $CONFIG --file_base $DATA_PATH
-
+python3 transformer_src/data_dnabert.py \
+    --pickle_dataset True \
+    --config $CONFIG \
+    --file_base $DATA_PATH \

@@ -1,0 +1,1 @@
+{"eval_loss": 0.13144248723983765, "eval_accuracy": 0.9501019792594295, "eval_AUC_score_1": 0.9489867400570792, "eval_FPR_Thresholds_0": [-0.8551434278488159, -0.3239707052707672, 0.019390687346458435, 0.6629417538642883], "eval_runtime": 93.4557, "eval_samples_per_second": 372.487, "eval_steps_per_second": 5.821, "epoch": 10.0}

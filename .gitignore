@@ -14,6 +14,7 @@ data/positive.p
 data/neg_sample.p
 data/neg_sample.tsv
 data/negative_fullsample.bed
+data/binary_data
 
 analysis/__pycache__
 analysis/.ipynb_checkpoints
@@ -23,4 +24,5 @@ analysis/results/fimo/negative
 
 output/negative_evaulation
 output/positive_evaulation/heads_atten.npy
+output/pos_biny_evaluation/heads_atten.npy
 

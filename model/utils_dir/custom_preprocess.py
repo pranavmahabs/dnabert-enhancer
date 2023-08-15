@@ -6,6 +6,7 @@
 import pandas as pd
 import numpy as np
 import sys
+import os
 from Bio import SeqIO
 from pybedtools import BedTool
 from motif_utils import seq2kmer
@@ -110,6 +111,9 @@ def create_dataset(param: ProcessInput, custom_label_function=get_positive_label
         param.res_dir,
     )
 
+    if not os.path.exists(results_dir):
+        os.makedirs(results_dir)
+
     # Load in the genome prior to building the dataset.
     chrom2seq = get_chrom2seq(fasta)
 
@@ -137,7 +141,7 @@ def create_dataset(param: ProcessInput, custom_label_function=get_positive_label
     ):
         for r in bed_list:
             # Maximum sequence length of 512
-            _seq = chrom2seq[r.chrom][r.start + 250 : r.stop - 251]
+            _seq = chrom2seq[r.chrom][r.start : r.stop]
             # if (r.stop - r.start) > 512:
             #     sys.exit("Sequence length greater than maximum of 512 detected.")
             # _seq = chrom2seq[r.chrom][r.start : r.stop]
@@ -166,7 +170,7 @@ def create_dataset(param: ProcessInput, custom_label_function=get_positive_label
         [neg_train_data, neg_val_data, neg_test_data],
     ):
         for r in bed_list:
-            _seq = chrom2seq[r.chrom][r.start + 250 : r.stop - 251]
+            _seq = chrom2seq[r.chrom][r.start : r.stop]
             kmerized = seq2kmer(str(_seq), 6)
             data_list.append(kmerized)
 
@@ -203,6 +207,9 @@ def create_single_tsv(param: SingleInput, name, label_function=get_positive_labe
         param.res_dir,
     )
 
+    if not os.path.exists(results_dir):
+        os.makedirs(results_dir)
+
     # Load in the genome prior to building the dataset.
     chrom2seq = get_chrom2seq(fasta)
 
@@ -212,7 +219,7 @@ def create_single_tsv(param: SingleInput, name, label_function=get_positive_labe
 
     for r in beds:
         # Maximum sequence length of 512
-        _seq = chrom2seq[r.chrom][r.start + 250: r.stop - 251]
+        _seq = chrom2seq[r.chrom][r.start : r.stop]
         kmerized = seq2kmer(str(_seq), K)
         data_list.append(kmerized)
         # Insert the Label into the Approriate List
@@ -228,7 +235,11 @@ def custom_label_function(r):
     # Edit this function to change the label function. Otherwise it will default to
     # the get_positive_labels function which is the default for the other functions.
     ##
-    return 0
+    # Default Label for Noise is 0 and Enhancer is 1.
+    if len(r.fields) == 3:
+        return 0
+    else:
+        return 1
 
 
 if __name__ == "__main__":
@@ -250,7 +261,7 @@ if __name__ == "__main__":
         help="If you only want to convert ONE BED file to a TSV.",
     )
     parser.add_argument("--single-bed-file", required=False)
-    parser.add_argument("--single-name", required=False)
+    parser.add_argument("--single-name", required=False, default="positive")
 
     args = parser.parse_args()
 
@@ -259,7 +270,7 @@ if __name__ == "__main__":
         param = SingleInput(
             args.single_bed_file, args.fast_file, args.k, args.results_folder
         )
-        create_single_tsv(param, args.single_name, label_function=get_positive_labels)
+        create_single_tsv(param, args.single_name, label_function=custom_label_function)
 
     if args.negative_file and args.positive_file:
         print("Generating the dataset...")
@@ -270,4 +281,4 @@ if __name__ == "__main__":
             args.k,
             args.results_folder,
         )
-        create_dataset(param, custom_label_function=get_positive_labels)
+        create_dataset(param, custom_label_function=custom_label_function)
