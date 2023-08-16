@@ -69,6 +69,7 @@ class TestingArguments(transformers.TrainingArguments):
     per_device_eval_batch_size: int = field(default=1)
     seed: int = field(default=42)
     re_eval: bool = field(default=False)
+    evaluation_strategy: str = field(default="steps")
 
 
 def setup(rank, world_size):
@@ -83,7 +84,7 @@ def cleanup():
 
 
 def process_scores(attention_scores, kmer):
-    scores = np.zeros([attention_scores.shape[0], attention_scores.shape[-1]])
+    scores = np.zeros([attention_scores.shape[0], aittention_scores.shape[-1]])
     unnorm = np.zeros([attention_scores.shape[0], attention_scores.shape[-1]])
 
     # attention_scores: (batch_size, num_heads, seq_len, seq_len)
@@ -207,6 +208,9 @@ def evaluate():
     device = torch.device(device_name)
     inference_model = inference_model.to(device)
 
+    if torch.cuda.device_count() > 1:
+        sys.exit("Too many GPUs in use. Please configure for only 1.")
+
     batch_size = test_args.per_device_eval_batch_size
     pred_loader = DataLoader(
         dataset=complete_dataset,
@@ -216,8 +220,8 @@ def evaluate():
     )
 
     score_len = len(complete_dataset.input_ids[0])
-    if score_len != 496:
-        raise ValueError("Score Length is not 496")
+    #if score_len != 496:
+    #    raise ValueError("Score Length is not 496")
     single_attentions = np.zeros((len(complete_dataset), score_len))
     unnorm_attentions = np.zeros((len(complete_dataset), score_len))
     pred_results = np.zeros((len(complete_dataset), num_labels))
@@ -269,12 +273,22 @@ def evaluate():
     np.save(os.path.join(test_args.output_dir, "heads_atten.npy"), multi_attentions)
     np.save(os.path.join(test_args.output_dir, "labels.npy"), true_labels)
 
+    if torch.cuda.is_available():
+        torch.cuda.empty_cache()
+
     if test_args.re_eval:
-        trainer = CustomTrainer(
-            model=inference_model,
+        model = transformers.AutoModelForSequenceClassification.from_pretrained(
+            model_args.dnabert_path,
+            cache_dir=None,
+            num_labels=num_labels,
+            trust_remote_code=True,
+            id2label=id2label,
+            label2id=label2id
+        )
+        inference_model2 = PeftModel.from_pretrained(model, model_args.peft_path)
+        trainer = transformers.Trainer(
+            model=inference_model2,
             args=test_args,
-            train_dataset=None,
-            eval_dataset=test_dataset,
             tokenizer=tokenizer,
             compute_metrics=compute_final_metrics,
         )

@@ -24,5 +24,5 @@ analysis/results/fimo/negative
 
 output/negative_evaulation
 output/positive_evaulation/heads_atten.npy
-output/pos_biny_evaluation/heads_atten.npy
+output/positive_evaulation/pos_biny_evaluation/heads_atten.npy
 

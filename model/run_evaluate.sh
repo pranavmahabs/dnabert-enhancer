@@ -5,11 +5,11 @@
 
 LABELJSON="labels.json"
 MODEL_PATH="pretrained_6mer/"
-PEFT_PATH="../output/best_berten_718/"
+PEFT_PATH="../output/binary_enhancer/best_binary_815/"
 
-DATA_PATH="../data/"
-OUTPATH="../output/negative_evaulation/"
-PICKLE="../data/neg_sample.p"
+DATA_PATH="../data/binary_data/"
+OUTPATH="../output/pos_biny_evaluation/"
+PICKLE="../data/binary_data/evaluate.p"
 
 # Command to be executed with the --normal flag
     # Add your normal command here
@@ -26,9 +26,11 @@ python3 transformer_src/evaluate_model.py \
         --run_name dnabert-enhancer \
         --model_max_length 512 \
         --per_device_eval_batch_size 16 \
+        --evaluation_strategy steps \
         --output_dir $OUTPATH \
         --overwrite_output_dir True \
         --log_level info \
+        --re_eval True \
 
 # If you are using a pickle file that contains a test dataset,
 # then make sure to include the --re_eval True setting.
