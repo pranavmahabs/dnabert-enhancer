@@ -84,7 +84,7 @@ def cleanup():
 
 
 def process_scores(attention_scores, kmer):
-    scores = np.zeros([attention_scores.shape[0], aittention_scores.shape[-1]])
+    scores = np.zeros([attention_scores.shape[0], attention_scores.shape[-1]])
     unnorm = np.zeros([attention_scores.shape[0], attention_scores.shape[-1]])
 
     # attention_scores: (batch_size, num_heads, seq_len, seq_len)
