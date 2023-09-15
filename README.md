@@ -106,7 +106,7 @@ Unlike classic fine-tuning, DNABERT-Enhancer used LoRA (Low Rank Adaptation for 
 Open the fine-tuning script and enter the data-paths. Additionally, fell free to change any of the hyperparameters that are currently sit to fit your model needs. Enter your desired output directory. Make sure to choose a new directory as this will overwrite results from a previous successful run. **Note on GPUS**: When I trained the model, I used 4 NVIDIA TESLA P100 GPUs allocating 120GB memory for each. Please keep this in mind when setting your batch_size for training and evaluation. 
 
 ```bash
-$ sbatch run_finetune.sh --gres=gpu:p100:4 --time=32:00:00 --mem=120g --cpus-per-task=16
+$ sbatch --partition=gpu --gres=gpu:p100:4 --time=32:00:00 --mem=120g --cpus-per-task=16 run_finetune.sh
 ```
 
 The following, amongst other outputs, will be produced in the output directory. There will be THREE (can be changed) models saved, each with separate outputs of the following. It is up to you to choose which one you think is the best. 
