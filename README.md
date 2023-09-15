@@ -128,7 +128,7 @@ Prediction is handled in DNABERT-Enhancer using `run_evaluate.sh` in the same mo
 This script is configured to run on the `evaluate.p` file. Internally, the pickle file stores a dictionary that contains the datasets for testing and the positive  dataset. If you want to run evaluation again, make sure to include the following flag: `--re_eval True` to your shell script. **However**, if you only want to run on a single file and get attention scores/logits, do **not** include this flag and provide the path to your desired pickle file. Running the evaluation script should take around 15-20 minutes on around 30000 samples.
 
 ```bash
-$ sbatch run_evaluate.sh --gres=gpu:p100:1 --cpus-per-task=16 --mem=120g --time=08:00:00
+$ sbatch --partition=gpu --gres=gpu:p100:1 --cpus-per-task=16 --mem=120g --time=08:00:00 run_evaluate.sh
 ```
 
 These are the following outputs:
